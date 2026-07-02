@@ -2,7 +2,7 @@ const ai = require("../config/gemini");
 const extractTextFromPDF = require("../utils/extractText");
 const isResume = require("../utils/validateResume");
 
-const analyzeResume = async (file) => {
+const analyzeResume = async (file, jobDescription) => {
 
     const resumeText = await extractTextFromPDF(file.path);
 
@@ -16,51 +16,107 @@ const analyzeResume = async (file) => {
     }
 
     const prompt = `
-    You are an expert ATS (Applicant Tracking System) Resume Analyzer.
+    You are an expert Technical Recruiter and ATS Resume Screening System.
 
-    Analyze the following resume carefully and evaluate it like a professional recruiter.
+    Your task is to compare the candidate's resume against the provided job description.
+
+    Evaluate how well the candidate matches the role.
 
     Return ONLY valid JSON.
 
     Response format:
 
     {
-    "score": number,
+    "matchScore": number,
+    "recommendation": "",
+    "matchedSkills": [],
+    "missingSkills": [],
     "strengths": [],
-    "weaknesses": [],
+    "skillGaps": [],
+    "reasoning": "",
     "suggestions": []
     }
 
     Rules:
 
-    - Score must be between 0 and 100.
-    - Return exactly 5 strengths.
-    - Return exactly 5 weaknesses.
-    - Return exactly 5 suggestions.
-    - Each point should be concise (approximately 5–10 words).
-    - Use concise bullet-style phrases.
-    - Do NOT write long sentences.
-    - Do NOT explain your reasoning.
-    - Do NOT include markdown.
-    - Do NOT include headings.
-    - Do NOT return any text outside the JSON.
-    - Ensure the JSON is syntactically valid and can be parsed directly with JSON.parse().
-    - Keep the feedback ATS-focused and professional.
-    - Each array must contain exactly 5 unique items.
-    - Do not repeat the same advice.
-    - Each item should be a standalone phrase.
+    - Compare the resume ONLY against the provided job description.
+    - Do NOT invent skills, education, certifications, or experience.
+    - Base every conclusion strictly on the resume.
+    - Never assume or infer a skill.
+    - Only include skills, technologies, achievements, or experience that are explicitly mentioned in the resume.
+    - If something is not written in the resume, treat it as missing.
 
-    Example:
+    Treat the Job Description as the hiring requirements and the Resume as the candidate profile.
+    Compare both documents objectively and explain only observable matches and gaps.
 
-    "Strong technical skills"
+    Scoring Guidelines:
 
-    NOT
+    90–100
+    Candidate satisfies almost every required skill and experience.
 
-    "The resume demonstrates strong technical skills in modern web development."
+    75–89
+    Candidate satisfies most required skills with only minor gaps.
+
+    60–74
+    Candidate has several relevant skills but notable missing requirements.
+
+    40–59
+    Candidate has limited alignment with the job requirements.
+
+    0–39
+    Candidate lacks most required skills or experience.
+
+    Return:
+
+    - matchScore (0–100)
+
+    Recommendation must be exactly one of:
+
+    - Excellent Match
+    - Good Match
+    - Average Match
+    - Poor Match
+
+    Requirements:
+
+    - matchedSkills: 3–8 items.
+    - missingSkills: 3–8 items.
+    - strengths: 3–8 items.
+    - skillGaps: 3–8 items.
+    - suggestions: 3–8 items.
+
+    Only include items that are genuinely supported by the resume and job description.
+    Do not fabricate additional points to satisfy a fixed count.
+
+    Each bullet:
+    - 3–10 words
+    - Professional
+    - ATS-focused
+    - No paragraphs
+
+    Reasoning:
+    Write 2–3 concise sentences explaining why the score was assigned.
+
+    The matchScore MUST be consistent with:
+    - matchedSkills
+    - missingSkills
+    - strengths
+    - skillGaps
+    - reasoning
+
+    The recommendation, reasoning, and matchScore must all agree with each other.
+
+    Return valid JSON only.
 
     Resume:
 
     ${resumeText}
+
+    -------------------------------------
+
+    Job Description:
+
+    ${jobDescription}
     `;
 
     const response = await ai.models.generateContent({
@@ -73,7 +129,18 @@ const analyzeResume = async (file) => {
     text = text.replace(/```json/g, "");
     text = text.replace(/```/g, "").trim();
 
-    return JSON.parse(text);
+    console.log(text);
+
+    try {
+        return JSON.parse(text);
+    } catch (error) {
+        console.error("Invalid JSON returned by Gemini:", text);
+
+        return {
+            error: true,
+            message: "Failed to parse AI response. Please try again."
+        };
+    }
 };
 
 module.exports = {
