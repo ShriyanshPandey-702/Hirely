@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import jobTemplates from "./assets/jobTemplates";
 
 const loadingSteps = [
   "📄 Uploading Resume...",
@@ -14,6 +15,7 @@ function App() {
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [jobDescription, setJobDescription] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
@@ -268,12 +270,57 @@ const handleDrop = (e) => {
             </div>
           </div>
 
+          {/* Template Dropdown */}
+          <div className="mb-5">
+            <label className="block text-xs font-medium text-gray-400 mb-2">
+              Select Template
+            </label>
+
+            <select
+              value={selectedTemplate}
+              onChange={(e) => {
+                setSelectedTemplate(e.target.value);
+
+                if (e.target.value) {
+                  setJobDescription(jobTemplates[e.target.value]);
+                }
+              }}
+              className="
+                w-full
+                rounded-xl
+                bg-white/[0.04]
+                border border-white/10
+                text-gray-300
+                text-sm
+                px-4 py-3
+                outline-none
+                transition-all
+                duration-200
+                focus:border-indigo-500/60
+                focus:ring-2
+                focus:ring-indigo-500/15
+              "
+            >
+              <option value="">Choose a Job Template</option>
+              <option value="frontend">Frontend Developer</option>
+              <option value="backend">Backend Developer</option>
+              <option value="java">Java Full Stack</option>
+              <option value="react">React Developer</option>
+              <option value="python">Python Developer</option>
+              <option value="dataScience">Data Scientist</option>
+              <option value="mern">MERN Stack</option>
+              <option value="devops">DevOps Engineer</option>
+            </select>
+          </div>
+
           {/* Textarea wrapper */}
           <div className="relative group">
             <textarea
-              id="job-description-input"
               value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
+              onChange={(e) => {
+                setJobDescription(e.target.value);
+                setSelectedTemplate("");
+              }}
               placeholder="Paste the full job description here — required skills, responsibilities, qualifications..."
               rows={8}
               maxLength={5000}
