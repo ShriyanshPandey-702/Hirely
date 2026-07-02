@@ -1,17 +1,50 @@
 const { analyzeResume } = require("../services/resumeService");
 
-const getResume = (req, res) => {
+const getResume = async (req, res) => {
 
-    if (!req.file) {
-        return res.status(400).json({
+    try {
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "No resume uploaded"
+            });
+        }
+
+        const result = await analyzeResume(req.file);
+
+        if (result.error) {
+
+            return res.status(400).json({
+                success: false,
+                message: result.message
+            });
+
+        }
+
+        res.json({
+            success: true,
+            analysis: result
+        });
+
+    } catch (error) {
+
+    console.error(error);
+
+    if (error.status === 429) {
+        return res.status(429).json({
             success: false,
-            message: "No resume uploaded"
+            message: "Gemini API quota exceeded. Please try again later."
         });
     }
 
-    const result = analyzeResume(req.file);
+    res.status(500).json({
+        success: false,
+        message: "Internal Server Error"
+    });
 
-    res.json(result);
+    }
+
 };
 
 module.exports = {
