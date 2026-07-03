@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import jsPDF from "jspdf";
 import jobTemplates from "./assets/jobTemplates";
 
 const loadingSteps = [
@@ -20,6 +21,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [dragActive, setDragActive] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [theme, setTheme] = useState("dark");
+
+  const resultRef = useRef(null);
 
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
@@ -70,13 +75,22 @@ const handleDrop = (e) => {
     formData.append("jobDescription", jobDescription);
 
     try {
-
-      const response = await axios.post(
-        "http://localhost:5001/api/resume/upload",
-        formData
-      );
-
+      const response = await axios.post("http://localhost:5001/api/resume/upload",formData);
       setResult(response.data);
+
+      if (response.data.success) {
+      const newHistoryItem = {
+        id: Date.now(),
+        jobTitle: selectedTemplate || "Custom Job Description",
+        score: response.data.analysis.matchScore,
+        recommendation: response.data.analysis.recommendation,
+        analysis: response.data.analysis,
+        date: new Date().toLocaleString(),
+      };
+      const updatedHistory = [newHistoryItem,...history].slice(0, 5);
+      setHistory(updatedHistory);
+      localStorage.setItem("analysisHistory",JSON.stringify(updatedHistory));
+      }
 
     } catch (error) {
 
@@ -104,6 +118,26 @@ const handleDrop = (e) => {
   handleUpload();
   };
 
+  // Delete History
+  const deleteHistoryItem = (id) => {
+  const updatedHistory = history.filter((item) => item.id !== id);
+
+  setHistory(updatedHistory);
+
+  localStorage.setItem(
+    "analysisHistory",
+    JSON.stringify(updatedHistory)
+  );
+  };
+
+  // clear history
+  const clearHistory = () => {
+  setHistory([]);
+
+  localStorage.removeItem("analysisHistory");
+  };
+
+  // Loading animation
   useEffect(() => {
 
   if (!loading) {
@@ -123,6 +157,35 @@ const handleDrop = (e) => {
   }, [loading]);
 
 
+  // Auto Scroll
+  useEffect(() => {
+  if (!loading && result?.success && resultRef.current) {
+    resultRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+  }, [loading, result]);
+
+  useEffect(() => {
+  const savedHistory = JSON.parse(localStorage.getItem("analysisHistory")) || [];
+  setHistory(savedHistory);
+  }, []);
+
+
+  useEffect(() => {
+  const savedTheme = localStorage.getItem("theme");
+
+  if (savedTheme) {
+    setTheme(savedTheme);
+  }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+
   const formatFileSize = (bytes) => {
     if (bytes < 1024 * 1024) {
       return `${(bytes / 1024).toFixed(1)} KB`;
@@ -130,9 +193,178 @@ const handleDrop = (e) => {
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
+  // Download PDF
+  const downloadPDF = () => {
+
+  if (!result?.analysis) return;
+  const pdf = new jsPDF();
+  const analysis = result.analysis;
+
+  let y = 20;
+  pdf.setTextColor(63, 81, 181);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(22);
+  pdf.text("SMART RESUME ANALYZER", 20, y);
+
+  y += 10;
+  pdf.setFontSize(16);
+  pdf.setTextColor(0, 0, 0);
+  pdf.text("AI Resume Analysis Report", 20, y);
+
+  y += 8;
+
+  pdf.setDrawColor(180);
+  pdf.line(20, y, 190, y);
+
+  y += 10;
+
+  // Generated Date
+  const currentDate = new Date().toLocaleString();
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+  pdf.setTextColor(100);
+
+  pdf.text(`Generated: ${currentDate}`, 20, y);
+
+  y += 12;
+
+  // Back to normal black text
+  pdf.setTextColor(0);
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(15);
+  pdf.text("Candidate Match Score", 20, y);
+
+  y += 12;
+
+  pdf.setTextColor(30, 64, 175);
+  pdf.setFontSize(26);
+  pdf.text(`${analysis.matchScore} / 100`, 20, y);
+
+  y += 15;
+
+  pdf.setTextColor(0);
+  pdf.setFontSize(15);
+  pdf.setFont("helvetica", "bold");
+  pdf.text("Recommendation", 20, y);
+
+  y += 10;
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(13);
+  pdf.text(analysis.recommendation, 20, y);
+
+  y += 12;
+
+  const addSection = (title, items) => {
+
+    if (y > 240) {
+        pdf.addPage();
+        y = 20;
+    }
+
+    pdf.setDrawColor(180);
+    pdf.line(20, y, 190, y);
+
+    y += 8;
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(14);
+
+    pdf.text(title, 20, y);
+
+    y += 6;
+
+    pdf.setDrawColor(220);
+    pdf.line(20, y, 190, y);
+
+    y += 8;
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(11);  
+    
+    items.forEach((item) => {
+      if (y > 270) {
+        pdf.addPage();
+        y = 20;
+      }
+
+      pdf.text(`• ${item}`, 25, y);
+      y += 8;
+    });
+
+    y += 10;
+  };
+
+  addSection("Matched Skills", analysis.matchedSkills);
+  addSection("Missing Skills", analysis.missingSkills);
+  addSection("Matched Keywords", analysis.matchedKeywords);
+  addSection("Missing Keywords", analysis.missingKeywords);
+  addSection("Candidate Strengths", analysis.strengths);
+  addSection("Skill Gaps", analysis.skillGaps);
+
+  pdf.setDrawColor(180);
+  pdf.line(20, y, 190, y);
+
+  y += 8;
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(14);
+  pdf.text("Reasoning", 20, y);
+
+  y += 8;
+
+  pdf.setDrawColor(220);
+  pdf.line(20, y, 190, y);
+
+  y += 8;
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(11);
+
+
+  const reasoning = pdf.splitTextToSize(analysis.reasoning, 170);
+
+  if (y + reasoning.length * 7 > 270) {
+    pdf.addPage();
+    y = 20;
+  }
+  
+  pdf.text(reasoning, 20, y);
+
+  y += reasoning.length * 7 + 8;
+
+  addSection("Suggestions", analysis.suggestions);
+
+  pdf.save("Resume-Analysis-Report.pdf");
+
+  };
+
+
   const circumference = 339.29;
   const score = result?.analysis?.matchScore ?? 0;
   const scoreOffset = circumference - (score / 100) * circumference;
+
+  const cardClass =
+  theme === "dark"
+    ? "bg-white/[0.04] border border-white/10"
+    : "bg-white border border-gray-200 shadow-sm";
+
+  const primaryText =
+    theme === "dark"
+      ? "text-white"
+      : "text-gray-900";
+
+  const secondaryText =
+    theme === "dark"
+      ? "text-gray-400"
+      : "text-gray-600";
+
+  const mutedText =
+  theme === "dark"
+    ? "text-gray-500"
+    : "text-gray-600";
 
   const scoreColor =
     score >= 90
@@ -154,30 +386,56 @@ const handleDrop = (e) => {
         };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
+    <div className={`min-h-screen transition-colors duration-300 ${theme === "dark"? "bg-[#0a0a0f] text-white": "bg-gray-100 text-gray-900"}`}>
 
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,_rgba(99,102,241,0.12),_transparent)] pointer-events-none" />
+      <div className={`fixed inset-0 pointer-events-none ${theme === "dark"? "bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,_rgba(99,102,241,0.12),_transparent)]": "bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,_rgba(99,102,241,0.06),_transparent)]"}`}/>
 
-      <div className="relative z-10 max-w-2xl mx-auto px-4 py-16 sm:py-24">
+      <div className="relative z-10 max-w-2xl mx-auto px-4 pt-8 pb-16 sm:pt-10 sm:pb-24">
+
+        <div className="flex justify-end mb-6">
+        <button
+          onClick={() =>
+            setTheme(theme === "dark" ? "light" : "dark")
+          }
+          className={`px-4 py-2 rounded-lg transition ${
+            theme === "dark"
+              ? "bg-white/5 border border-white/10 text-white hover:bg-white/10"
+              : "bg-white border border-gray-300 text-gray-800 hover:bg-gray-100"
+          }`}
+        >
+          {theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode"}
+        </button>
+      </div>
 
         {/* Hero */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400 mb-6">
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs mb-6 ${
+              theme === "dark"
+                ? "bg-white/5 border border-white/10 text-gray-400"
+                : "bg-white border border-gray-300 text-gray-700"
+            }`}
+          >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             AI Recruiter Assistant
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-br from-white via-gray-200 to-gray-500 bg-clip-text text-transparent mb-4 leading-tight">
+          <h1
+            className={`text-4xl sm:text-5xl font-extrabold tracking-tight mb-4 leading-tight ${theme === "dark"
+              ? "bg-gradient-to-br from-white via-gray-200 to-gray-500 bg-clip-text text-transparent"
+              : "text-gray-900"
+            }`}
+          >
             Smart Resume<br />Analyzer
           </h1>
 
-          <p className="text-gray-400 text-base sm:text-lg max-w-md mx-auto leading-relaxed">
+          <p className={`${secondaryText} text-base sm:text-lg max-w-md mx-auto leading-relaxed`}>
             Upload a resume and paste a job description to receive an AI-powered candidate match analysis.
           </p>
         </div>
 
         {/* Upload */}
-        <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-6 sm:p-8 mb-6">
+        <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6 sm:p-8 mb-6`}>
 
           <label
             htmlFor="resume-input"
@@ -210,7 +468,7 @@ const handleDrop = (e) => {
 
             {selectedFile ? (
               <div className="text-center">
-                <p className="text-white font-medium text-sm break-all">{selectedFile.name}</p>
+                <p className={`${primaryText} font-medium text-sm break-all`}>{selectedFile.name}</p>
                 <p className="text-gray-500 text-xs mt-1">
                   {formatFileSize(selectedFile.size)} · Click to change
                 </p>
@@ -230,11 +488,11 @@ const handleDrop = (e) => {
                   </>
                 ) : (
                   <>
-                    <p className="text-gray-300 text-sm">
+                    <p className={`${secondaryText} text-sm`}>
                       📄 Drop Resume Here
                     </p>
 
-                    <p className="text-white text-sm mt-2">
+                    <p className={`${primaryText} text-sm mt-2`}>
                       or Click to Upload
                     </p>
 
@@ -259,7 +517,7 @@ const handleDrop = (e) => {
         </div>
 
         {/* Job Description */}
-        <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-6 sm:p-8 mb-6">
+        <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6 sm:p-8 mb-6`}>
 
           {/* Card header */}
           <div className="flex items-center gap-3 mb-5">
@@ -269,14 +527,14 @@ const handleDrop = (e) => {
               </svg>
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-white tracking-wide">Job Description</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Paste the complete job description for comparison.</p>
+              <h2 className={`text-sm font-semibold tracking-wide ${primaryText}`}>Job Description</h2>
+              <p className={`text-xs mt-0.5 ${secondaryText}`}>Paste the complete job description for comparison.</p>
             </div>
           </div>
 
           {/* Template Dropdown */}
           <div className="mb-5">
-            <label className="block text-xs font-medium text-gray-400 mb-2">
+            <label className={`block text-xs font-medium ${secondaryText} mb-2`}>
               Select Template
             </label>
 
@@ -289,21 +547,23 @@ const handleDrop = (e) => {
                   setJobDescription(jobTemplates[e.target.value]);
                 }
               }}
-              className="
-                w-full
-                rounded-xl
-                bg-white/[0.04]
-                border border-white/10
-                text-gray-300
-                text-sm
-                px-4 py-3
-                outline-none
-                transition-all
-                duration-200
-                focus:border-indigo-500/60
-                focus:ring-2
-                focus:ring-indigo-500/15
-              "
+              className={`
+              w-full
+              rounded-xl
+              px-4
+              py-3
+              outline-none
+              transition-all
+              duration-200
+              focus:border-indigo-500/60
+              focus:ring-2
+              focus:ring-indigo-500/15
+              ${
+                theme === "dark"
+                  ? "bg-white/[0.04] border border-white/10 text-gray-300"
+                  : "bg-white border border-gray-300 text-gray-900"
+              }
+              `}
             >
               <option value="">Choose a Job Template</option>
               <option value="frontend">Frontend Developer</option>
@@ -328,20 +588,28 @@ const handleDrop = (e) => {
               placeholder="Paste the full job description here — required skills, responsibilities, qualifications..."
               rows={8}
               maxLength={5000}
-              className="
-                w-full resize-none rounded-xl
-                bg-white/[0.04] border border-white/10
-                text-gray-300 placeholder-gray-600
-                text-sm leading-relaxed
-                px-4 py-3.5
-                outline-none
-                transition-all duration-200
-                focus:border-indigo-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-indigo-500/15
-                hover:border-white/20
-              "
+              className={`
+              w-full
+              resize-none
+              rounded-xl
+              px-4
+              py-3.5
+              outline-none
+              transition-all
+              duration-200
+              focus:border-indigo-500/60
+              focus:ring-2
+              focus:ring-indigo-500/15
+              hover:border-white/20
+              ${
+                theme === "dark"
+                  ? "bg-white/[0.04] border border-white/10 text-gray-300 placeholder-gray-600"
+                  : "bg-white border border-gray-300 text-gray-900 placeholder-gray-400"
+              }
+              `}
             />
             {/* Character counter */}
-            <span className="absolute bottom-3 right-3.5 text-[11px] text-gray-600 pointer-events-none select-none tabular-nums">
+            <span className={`absolute bottom-3 right-3.5 text-[11px] ${mutedText} pointer-events-none select-none tabular-nums`}>
               {jobDescription.length} / 5000
             </span>
           </div>
@@ -359,13 +627,13 @@ const handleDrop = (e) => {
 
         {/* Loading */}
         {loading && (
-          <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-12 flex flex-col items-center gap-5 fade-in-up">
+          <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-12 flex flex-col items-center gap-5 fade-in-up`}>
             <div className="relative w-12 h-12">
               <div className="absolute inset-0 rounded-full border-2 border-white/10" />
               <div className="absolute inset-0 rounded-full border-2 border-t-white border-r-transparent border-b-transparent border-l-transparent animate-spin" />
             </div>
             <div className="text-center">
-              <p className="text-white font-semibold">
+              <p className={`${primaryText} font-semibold`}>
                   {loadingSteps[loadingStep]}
               </p>
 
@@ -409,12 +677,59 @@ const handleDrop = (e) => {
           </div>
         )}
 
+        {/* Analysis History */}
+        {history.length > 0 && (
+          <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6 mb-6`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className={`text-lg font-semibold ${primaryText}`}>🕒 Recent Analyses</h2>
+              <button onClick={clearHistory} className="text-sm text-red-400 hover:text-red-300 transition">Clear All</button>
+            </div>
+
+            <div className="space-y-3">
+              {history.map((item) => (
+                <div
+                    key={item.id}
+                    className={`w-full rounded-xl p-4 ${theme === "dark"? "border border-white/10 bg-white/[0.03]" : "border border-gray-200 bg-gray-50"}`}>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className={`font-medium ${primaryText}`}>{item.jobTitle}</p>
+                      <p className="text-xs text-gray-500 mt-1">{item.date}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold text-indigo-400">{item.score}%
+                      </p>
+                      <p className="text-xs text-gray-400">{item.recommendation}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    onClick={() =>
+                      setResult({
+                        success: true,
+                        analysis: item.analysis,
+                      })
+                    }
+                    className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm">Open</button>
+
+                  <button
+                    onClick={() => deleteHistoryItem(item.id)}
+                    className="px-3 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm">Delete</button>
+
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+
         {/* Results */}
         {!loading && result?.success && result.analysis && (
-          <div className="space-y-5 fade-in-up">
+          <div ref={resultRef} className="space-y-5 fade-in-up">
 
             {/* ATS Score */}
-            <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-8">
+            <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-8`}>
               <div className="flex flex-col items-center gap-5">
                 <div className="flex flex-col items-center gap-2">
                   <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
@@ -452,9 +767,16 @@ const handleDrop = (e) => {
               </div>
             </div>
 
+            {/* Download Report */}
+            <div className="flex justify-center">
+              <button onClick={downloadPDF} className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 transition-all duration-200 text-white font-medium shadow-lg hover:shadow-indigo-500/30">
+                📄 Download PDF Report
+              </button>
+            </div>
+
             {/* Matched Skills */}
             {result.analysis.matchedSkills?.length > 0 && (
-              <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-6">
+              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -465,7 +787,7 @@ const handleDrop = (e) => {
                 </div>
                 <ul className="space-y-2.5">
                   {result.analysis.matchedSkills.map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-gray-300 leading-relaxed">
+                    <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2 flex-shrink-0" />
                       {item}
                     </li>
@@ -476,7 +798,7 @@ const handleDrop = (e) => {
 
             {/* Missing Skills */}
             {result.analysis.missingSkills?.length > 0 && (
-              <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-6">
+              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -487,7 +809,7 @@ const handleDrop = (e) => {
                 </div>
                 <ul className="space-y-2.5">
                   {result.analysis.missingSkills.map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-gray-300 leading-relaxed">
+                    <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
                       <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-2 flex-shrink-0" />
                       {item}
                     </li>
@@ -498,7 +820,7 @@ const handleDrop = (e) => {
 
             {/* Matched Keywords */}
             {result.analysis.matchedKeywords?.length > 0 && (
-              <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-6">
+              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-7 h-7 rounded-lg bg-green-500/15 flex items-center justify-center">
                     ✓
@@ -524,7 +846,7 @@ const handleDrop = (e) => {
 
             {/* Missing Keywords */}
             {result.analysis.missingKeywords?.length > 0 && (
-              <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-6">
+              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center">
                     ✕
@@ -550,7 +872,7 @@ const handleDrop = (e) => {
 
             {/* Candidate Strengths */}
             {result.analysis.strengths?.length > 0 && (
-              <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-6">
+              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -561,7 +883,7 @@ const handleDrop = (e) => {
                 </div>
                 <ul className="space-y-2.5">
                   {result.analysis.strengths.map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-gray-300 leading-relaxed">
+                    <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 flex-shrink-0" />
                       {item}
                     </li>
@@ -572,7 +894,7 @@ const handleDrop = (e) => {
 
             {/* Skill Gaps */}
             {result.analysis.skillGaps?.length > 0 && (
-              <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-6">
+              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -583,7 +905,7 @@ const handleDrop = (e) => {
                 </div>
                 <ul className="space-y-2.5">
                   {result.analysis.skillGaps.map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-gray-300 leading-relaxed">
+                    <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 flex-shrink-0" />
                       {item}
                     </li>
@@ -594,7 +916,7 @@ const handleDrop = (e) => {
 
             {/* Reasoning */}
             {result.analysis.reasoning && (
-              <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-6">
+              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-7 h-7 rounded-lg bg-gray-500/15 flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -603,13 +925,13 @@ const handleDrop = (e) => {
                   </div>
                   <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Reasoning</h2>
                 </div>
-                <p className="text-sm text-gray-300 leading-relaxed">{result.analysis.reasoning}</p>
+                <p className={`text-sm leading-relaxed ${secondaryText}`}>{result.analysis.reasoning}</p>
               </div>
             )}
 
             {/* Suggestions */}
             {result.analysis.suggestions?.length > 0 && (
-              <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-6">
+              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-7 h-7 rounded-lg bg-sky-500/15 flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -620,7 +942,7 @@ const handleDrop = (e) => {
                 </div>
                 <ul className="space-y-2.5">
                   {result.analysis.suggestions.map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-gray-300 leading-relaxed">
+                    <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
                       <span className="w-1.5 h-1.5 rounded-full bg-sky-400 mt-2 flex-shrink-0" />
                       {item}
                     </li>
@@ -632,7 +954,7 @@ const handleDrop = (e) => {
           </div>
         )}
 
-        <p className="text-center text-gray-700 text-xs mt-14">
+        <p className={`text-center ${mutedText} text-xs mt-14`}>
           Built with React • Express • Tailwind CSS • Gemini AI
         </p>
 
