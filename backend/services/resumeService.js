@@ -31,6 +31,8 @@ const analyzeResume = async (file, jobDescription) => {
     "recommendation": "",
     "matchedSkills": [],
     "missingSkills": [],
+    "matchedKeywords": [],
+    "missingKeywords": [],
     "strengths": [],
     "skillGaps": [],
     "reasoning": "",
@@ -81,12 +83,21 @@ const analyzeResume = async (file, jobDescription) => {
 
     - matchedSkills: 3–8 items.
     - missingSkills: 3–8 items.
+    - matchedKeywords: 3–10 keywords found in both resume and job description.
+    - missingKeywords: 3–10 keywords required by the job description but absent from the resume.
     - strengths: 3–8 items.
     - skillGaps: 3–8 items.
     - suggestions: 3–8 items.
 
     Only include items that are genuinely supported by the resume and job description.
     Do not fabricate additional points to satisfy a fixed count.
+
+    Keyword Rules:
+
+    - matchedKeywords must contain only exact skills, tools, frameworks, technologies, or qualifications that appear in BOTH the resume and the job description.
+    - missingKeywords must contain only exact skills, tools, frameworks, technologies, or qualifications that appear in the job description but NOT in the resume.
+    - Do not paraphrase keywords.
+    - Do not infer equivalent technologies.
 
     Each bullet:
     - 3–10 words

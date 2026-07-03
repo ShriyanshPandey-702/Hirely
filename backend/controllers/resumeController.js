@@ -34,16 +34,27 @@ const getResume = async (req, res) => {
 
     console.error(error);
 
-    if (error.status === 429) {
-        return res.status(429).json({
+    // Gemini server busy
+    if (error.status === 503) {
+        return res.status(503).json({
             success: false,
-            message: "Gemini API quota exceeded. Please try again later."
+            message:
+                "Gemini AI is currently experiencing high demand. Please wait a few seconds and try again."
         });
     }
 
-    res.status(500).json({
+    // Gemini rate limit exceeded
+    if (error.status === 429) {
+        return res.status(429).json({
+            success: false,
+            message:
+                "Rate limit exceeded. Please wait a minute and try again."
+        });
+    }
+
+    return res.status(500).json({
         success: false,
-        message: "Internal Server Error"
+        message: "Something went wrong. Please try again."
     });
 
     }

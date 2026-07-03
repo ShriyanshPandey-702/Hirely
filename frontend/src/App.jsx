@@ -100,6 +100,10 @@ const handleDrop = (e) => {
 
   };
 
+  const handleRetry = () => {
+  handleUpload();
+  };
+
   useEffect(() => {
 
   if (!loading) {
@@ -397,6 +401,10 @@ const handleDrop = (e) => {
             <div>
               <p className="text-red-400 font-semibold text-sm">Analysis Failed</p>
               <p className="text-red-300/70 text-sm mt-1">{result.message}</p>
+              {/* Retry button */}
+              <button onClick={handleRetry} className="mt-5 px-5 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition">
+                  Try Again
+              </button>
             </div>
           </div>
         )}
@@ -485,6 +493,58 @@ const handleDrop = (e) => {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {/* Matched Keywords */}
+            {result.analysis.matchedKeywords?.length > 0 && (
+              <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-6">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <div className="w-7 h-7 rounded-lg bg-green-500/15 flex items-center justify-center">
+                    ✓
+                  </div>
+
+                  <h2 className="text-sm font-semibold text-green-400 uppercase tracking-wider">
+                    Matched Keywords
+                  </h2>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {result.analysis.matchedKeywords.map((keyword, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-300 text-sm"
+                    >
+                      {keyword}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Missing Keywords */}
+            {result.analysis.missingKeywords?.length > 0 && (
+              <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm p-6">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center">
+                    ✕
+                  </div>
+
+                  <h2 className="text-sm font-semibold text-red-400 uppercase tracking-wider">
+                    Missing Keywords
+                  </h2>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {result.analysis.missingKeywords.map((keyword, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-300 text-sm"
+                    >
+                      {keyword}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
