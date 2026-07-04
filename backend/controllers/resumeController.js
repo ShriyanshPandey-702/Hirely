@@ -1,4 +1,5 @@
 const { analyzeResume } = require("../services/resumeService");
+const Analysis = require("../models/Analysis");
 
 const getResume = async (req, res) => {
 
@@ -24,6 +25,16 @@ const getResume = async (req, res) => {
             });
 
         }
+
+        // Save analysis to MongoDB
+        await Analysis.create({
+            jobTitle: "Custom Job Description",
+            jobDescription,
+            fileName: req.file.originalname,
+            matchScore: result.matchScore,
+            recommendation: result.recommendation,
+            analysis: result
+        });
 
         res.json({
             success: true,
