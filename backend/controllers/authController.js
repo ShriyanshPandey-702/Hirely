@@ -162,9 +162,34 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// Delete Account
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const user = await User.findByIdAndDelete(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Account deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to delete account",
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   forgotPassword,
   resetPassword,
+  deleteAccount,
 };

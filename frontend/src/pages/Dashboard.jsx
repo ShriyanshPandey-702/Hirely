@@ -5,10 +5,12 @@ import jsPDF from "jspdf";
 import jobTemplates from "../assets/jobTemplates";
 import ConfirmationModal from "../components/ConfirmationModal";
 import { useTheme } from "../context/ThemeContext";
+import { toast } from "react-toastify";
 import {
   FiSun,
   FiMoon,
   FiLogOut,
+  FiUserX,
   FiUpload,
   FiFileText,
   FiClock,
@@ -388,6 +390,38 @@ const handleDrop = (e) => {
     });
   };
 
+  const confirmDeleteAccount = () => {
+    openModal({
+      title: "Delete Account",
+      description: "This action will permanently delete your account and all associated data. This action cannot be undone.",
+      confirmText: "Delete Account",
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          const token = localStorage.getItem("token");
+          await axios.delete("http://localhost:5001/api/auth/delete-account", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          localStorage.removeItem("token");
+          localStorage.removeItem("analysisHistory");
+          toast.success("Account deleted successfully");
+          navigate("/login");
+        } catch (error) {
+          if (error.response?.status === 401) {
+            toast.error("Session expired. Please log in again.");
+          } else if (error.response?.status >= 500) {
+            toast.error("Server error. Please try again later.");
+          } else if (error.request) {
+            toast.error("Network error. Check your connection.");
+          } else {
+            toast.error(error.response?.data?.message || "Failed to delete account");
+          }
+        }
+      }
+    });
+  };
+
   const circumference = 339.29;
   const score = result?.analysis?.matchScore ?? 0;
   const scoreOffset = circumference - (score / 100) * circumference;
@@ -447,12 +481,24 @@ const handleDrop = (e) => {
             }`}>
             <>
               {theme === "dark" ? <FiSun /> : <FiMoon />}
-              <span>
+              <span className="hidden sm:inline">
                 {theme === "dark"
                   ? "Light Mode"
                   : "Dark Mode"}
               </span>
             </>
+          </button>
+
+          <button
+            onClick={confirmDeleteAccount}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 border
+              ${theme === "dark" 
+                ? "bg-white/[0.04] border-white/10 text-gray-300 hover:border-red-500/50 hover:text-red-400 hover:bg-red-500/10" 
+                : "bg-white border-gray-300 text-gray-700 hover:border-red-500/50 hover:text-red-600 hover:bg-red-50"}
+            `}
+          >
+            <FiUserX />
+            <span className="hidden sm:inline">Delete Account</span>
           </button>
 
           <button
@@ -464,7 +510,7 @@ const handleDrop = (e) => {
             `}
           >
             <FiLogOut />
-            <span>Logout</span>
+            <span className="hidden sm:inline">Logout</span>
           </button>
 
         </div>
