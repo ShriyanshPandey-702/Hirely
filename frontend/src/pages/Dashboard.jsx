@@ -682,6 +682,7 @@ const handleDrop = (e) => {
               <option value="dataScience">Data Scientist</option>
               <option value="mern">MERN Stack</option>
               <option value="devops">DevOps Engineer</option>
+              <option value="aiEngineer">AI Engineer</option>
             </select>
           </div>
 

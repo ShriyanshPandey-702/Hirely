@@ -113,7 +113,7 @@ Build predictive models.
 Perform feature engineering.
 Present business insights.`,
 
-  mern: `MERN Stack Developer
+  MERN: `MERN Stack Developer
 
 Required Skills
 
@@ -147,7 +147,24 @@ Responsibilities
 Manage cloud infrastructure.
 Deploy applications.
 Automate CI/CD pipelines.
-Monitor system performance.`
+Monitor system performance.`,
+
+  aiEngineer: `
+AI Engineer
+
+Required Skills:
+- Python
+- Machine Learning
+- Deep Learning
+- TensorFlow
+- PyTorch
+- NLP
+- LLM
+- RAG
+- Vector Databases
+- FastAPI
+- Docker
+`
 };
 
 export default jobTemplates;
