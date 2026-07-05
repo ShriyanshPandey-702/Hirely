@@ -652,7 +652,7 @@ const handleDrop = (e) => {
                 setSelectedTemplate(e.target.value);
 
                 if (e.target.value) {
-                  setJobDescription(jobTemplates[e.target.value]);
+                  setJobDescription(jobTemplates[e.target.value] || "");
                 }
               }}
               className={`

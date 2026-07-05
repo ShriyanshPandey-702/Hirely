@@ -113,7 +113,7 @@ Build predictive models.
 Perform feature engineering.
 Present business insights.`,
 
-  MERN: `MERN Stack Developer
+  mern: `MERN Stack Developer
 
 Required Skills
 
@@ -149,7 +149,7 @@ Deploy applications.
 Automate CI/CD pipelines.
 Monitor system performance.`,
 
-  AIEngineer: `
+  aiEngineer: `
 AI Engineer
 
 Required Skills:
