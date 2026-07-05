@@ -78,7 +78,7 @@ function Signup() {
 
     try {
       const response = await axios.post(
-        "http://localhost:5001/api/auth/register",
+        "https://smart-resume-analyzer-1n57.onrender.com/api/auth/register",
         {
           name: formData.name,
           email: formData.email,

@@ -46,7 +46,7 @@ function Login() {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:5001/api/auth/login",
+        "https://smart-resume-analyzer-1n57.onrender.com/api/auth/login",
         formData
       );
 

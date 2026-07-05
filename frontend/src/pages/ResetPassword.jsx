@@ -75,7 +75,7 @@ function ResetPassword() {
 
     try {
       const response = await axios.post(
-        `http://localhost:5001/api/auth/reset-password/${token}`,
+        `https://smart-resume-analyzer-1n57.onrender.com/api/auth/reset-password/${token}`,
         { password: formData.password }
       );
 

@@ -105,7 +105,7 @@ const handleDrop = (e) => {
     formData.append("jobDescription", jobDescription);
 
     try {
-      const response = await axios.post("http://localhost:5001/api/resume/upload",formData);
+      const response = await axios.post("https://smart-resume-analyzer-1n57.onrender.com/api/resume/upload",formData);
       setResult(response.data);
 
       if (response.data.success) {
@@ -399,7 +399,7 @@ const handleDrop = (e) => {
       onConfirm: async () => {
         try {
           const token = localStorage.getItem("token");
-          await axios.delete("http://localhost:5001/api/auth/delete-account", {
+          await axios.delete("https://smart-resume-analyzer-1n57.onrender.com/api/auth/delete-account", {
             headers: { Authorization: `Bearer ${token}` }
           });
           

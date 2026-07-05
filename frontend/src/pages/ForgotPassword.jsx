@@ -31,7 +31,7 @@ function ForgotPassword() {
 
     try {
       const response = await axios.post(
-        "http://localhost:5001/api/auth/forgot-password",
+        "https://smart-resume-analyzer-1n57.onrender.com/api/auth/forgot-password",
         { email }
       );
       toast.success(response.data.message || "Reset link generated");
