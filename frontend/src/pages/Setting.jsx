@@ -9,7 +9,7 @@ import { FiSun, FiMoon, FiLock, FiEye, FiEyeOff, FiTrash2, FiUserX } from "react
 
 function Section({ title, cardClass, secondaryText, children }) {
   return (
-    <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6 mb-6`}>
+    <div className={`${cardClass} p-6 mb-6`}>
       <h2 className={`text-sm font-semibold uppercase tracking-wider mb-5 ${secondaryText}`}>{title}</h2>
       {children}
     </div>
@@ -25,18 +25,12 @@ function Settings() {
   const [changing, setChanging] = useState(false);
   const [modal, setModal] = useState({ isOpen: false, title: "", description: "", confirmText: "", onConfirm: () => {} });
 
-  const cardClass =
-    theme === "dark"
-      ? "bg-white/[0.04] border border-white/10"
-      : "bg-white border border-gray-200 shadow-sm";
-  const primaryText = theme === "dark" ? "text-white" : "text-gray-900";
-  const secondaryText = theme === "dark" ? "text-gray-400" : "text-gray-600";
+  const cardClass = "card";
+  const primaryText = "text-[var(--ink)]";
+  const secondaryText = "text-[var(--muted)]";
 
-  const inputClass = `w-full rounded-xl px-4 py-3 outline-none transition-all duration-200 focus:ring-2 focus:ring-indigo-500/15 border ${
-    theme === "dark"
-      ? "bg-white/[0.04] border-white/10 text-gray-200 placeholder-gray-600 focus:border-indigo-500/60"
-      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500"
-  }`;
+  const inputClass =
+    "w-full rounded-[var(--radius)] px-4 py-3 outline-none transition-colors duration-200 border bg-[var(--surface-2)] border-[var(--hairline)] text-[var(--ink)] placeholder-[var(--faint)] focus:border-[var(--accent)]";
 
   const openModal = (config) => setModal({ ...config, isOpen: true });
   const closeModal = () => setModal((m) => ({ ...m, isOpen: false }));
@@ -101,14 +95,12 @@ function Settings() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${theme === "dark" ? "bg-[#0a0a0f] text-white" : "bg-gray-100 text-gray-900"}`}>
-      <div className={`fixed inset-0 pointer-events-none ${theme === "dark" ? "bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,_rgba(99,102,241,0.12),_transparent)]" : "bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,_rgba(99,102,241,0.06),_transparent)]"}`} />
-
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
       <div className="relative z-10">
         <Navbar />
 
-        <div className="max-w-3xl mx-auto px-4 py-8 sm:py-10">
-          <h1 className={`text-2xl sm:text-3xl font-extrabold tracking-tight mb-6 ${primaryText}`}>Settings</h1>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+          <h1 className={`font-display text-2xl sm:text-3xl font-semibold tracking-tight mb-6 ${primaryText}`}>Settings</h1>
 
           {/* Appearance */}
           <Section title="Appearance" cardClass={cardClass} secondaryText={secondaryText}>
@@ -119,11 +111,7 @@ function Settings() {
               </div>
               <button
                 onClick={toggleTheme}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition border ${
-                  theme === "dark"
-                    ? "bg-white/5 border-white/10 text-white hover:bg-white/10"
-                    : "bg-white border-gray-300 text-gray-800 hover:bg-gray-100"
-                }`}
+                className="flex items-center gap-2 px-4 py-2 rounded-[var(--radius)] transition-colors border border-[var(--hairline)] bg-[var(--surface-2)] text-[var(--ink)] hover:border-[var(--accent)]"
               >
                 {theme === "dark" ? <FiSun /> : <FiMoon />}
                 {theme === "dark" ? "Light Mode" : "Dark Mode"}
@@ -170,7 +158,7 @@ function Settings() {
               <button
                 type="submit"
                 disabled={changing}
-                className="flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl font-semibold text-sm bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-accent flex items-center justify-center gap-2 w-full py-3 px-6 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FiLock />
                 {changing ? "Updating…" : "Change Password"}
@@ -179,8 +167,8 @@ function Settings() {
           </Section>
 
           {/* Danger zone */}
-          <div className={`rounded-2xl backdrop-blur-sm p-6 ${theme === "dark" ? "bg-red-500/[0.04] border border-red-500/20" : "bg-red-50 border border-red-200"}`}>
-            <h2 className="text-sm font-semibold uppercase tracking-wider mb-5 text-red-400">Danger Zone</h2>
+          <div className="rounded-[var(--radius)] p-6 border" style={{ borderColor: "var(--danger)" }}>
+            <h2 className="text-sm font-semibold uppercase tracking-wider mb-5" style={{ color: "var(--danger)" }}>Danger Zone</h2>
 
             <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
               <div>
@@ -189,17 +177,13 @@ function Settings() {
               </div>
               <button
                 onClick={clearHistory}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition border ${
-                  theme === "dark"
-                    ? "border-white/10 text-gray-300 hover:border-red-500/50 hover:text-red-400 hover:bg-red-500/10"
-                    : "border-gray-300 text-gray-700 hover:border-red-500/50 hover:text-red-600 hover:bg-red-50"
-                }`}
+                className="flex items-center gap-2 px-4 py-2 rounded-[var(--radius)] text-sm font-medium transition-colors border border-[var(--hairline)] text-[var(--muted)] hover:text-[var(--danger)] hover:border-[var(--danger)]"
               >
                 <FiTrash2 /> Clear History
               </button>
             </div>
 
-            <div className={`border-t my-4 ${theme === "dark" ? "border-white/10" : "border-red-200"}`} />
+            <div className="border-t my-4 border-[var(--hairline)]" />
 
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
@@ -208,7 +192,8 @@ function Settings() {
               </div>
               <button
                 onClick={deleteAccount}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition"
+                className="flex items-center gap-2 px-4 py-2 rounded-[var(--radius)] text-sm font-medium text-white transition-colors hover:brightness-110"
+                style={{ background: "var(--danger)" }}
               >
                 <FiUserX /> Delete Account
               </button>

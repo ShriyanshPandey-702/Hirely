@@ -4,6 +4,7 @@ import api from "../utils/api";
 import jsPDF from "jspdf";
 import jobTemplates from "../assets/jobTemplates";
 import ConfirmationModal from "../components/ConfirmationModal";
+import AnalysisResult from "../components/AnalysisResult";
 import Navbar from "../components/navbar";
 import { useTheme } from "../context/ThemeContext";
 import { toast } from "react-toastify";
@@ -40,7 +41,6 @@ function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [dragActive, setDragActive] = useState(false);
-  const [history, setHistory] = useState([]);
   const { theme, toggleTheme } = useTheme();
 
   const [modalConfig, setModalConfig] = useState({
@@ -85,16 +85,6 @@ const handleDrop = (e) => {
   }
   };
 
-  // Load the user's analysis history from the database
-  const fetchHistory = async () => {
-    try {
-      const { data } = await api.get("/resume/history");
-      setHistory(data.history || []);
-    } catch (error) {
-      console.error("Failed to load history:", error);
-    }
-  };
-
   const handleUpload = async () => {
 
     if (!selectedFile) {
@@ -120,11 +110,6 @@ const handleDrop = (e) => {
       const response = await api.post("/resume/upload", formData);
       setResult(response.data);
 
-      if (response.data.success) {
-        // The backend already persisted this analysis; refresh from the DB
-        fetchHistory();
-      }
-
     } catch (error) {
 
       console.error(error);
@@ -149,48 +134,6 @@ const handleDrop = (e) => {
 
   const handleRetry = () => {
   handleUpload();
-  };
-
-  // Delete a single analysis from the database
-  const deleteHistoryItem = async (id) => {
-    try {
-      await api.delete(`/resume/history/${id}`);
-      setHistory((prev) => prev.filter((item) => item._id !== id));
-      toast.success("Analysis deleted");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to delete analysis");
-    }
-  };
-
-  // Clear all analyses from the database
-  const clearHistory = async () => {
-    try {
-      await api.delete("/resume/history");
-      setHistory([]);
-      toast.success("History cleared");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to clear history");
-    }
-  };
-
-  const confirmDeleteHistoryItem = (id) => {
-    openModal({
-      title: "Delete Analysis",
-      description: "Are you sure you want to delete this analysis from your history? This action cannot be undone.",
-      confirmText: "Delete",
-      isDestructive: true,
-      onConfirm: () => deleteHistoryItem(id)
-    });
-  };
-
-  const confirmClearHistory = () => {
-    openModal({
-      title: "Clear All History",
-      description: "Are you sure you want to clear your entire analysis history? This action cannot be undone.",
-      confirmText: "Clear All",
-      isDestructive: true,
-      onConfirm: clearHistory
-    });
   };
 
   // Loading animation
@@ -222,10 +165,6 @@ const handleDrop = (e) => {
     });
   }
   }, [loading, result]);
-
-  useEffect(() => {
-  fetchHistory();
-  }, []);
 
   const formatFileSize = (bytes) => {
     if (bytes < 1024 * 1024) {
@@ -427,85 +366,47 @@ const handleDrop = (e) => {
   const score = result?.analysis?.matchScore ?? 0;
   const scoreOffset = circumference - (score / 100) * circumference;
 
-  const cardClass =
-  theme === "dark"
-    ? "bg-white/[0.04] border border-white/10"
-    : "bg-white border border-gray-200 shadow-sm";
+  const cardClass = "card";
+  const primaryText = "text-[var(--ink)]";
+  const secondaryText = "text-[var(--muted)]";
+  const mutedText = "text-[var(--faint)]";
 
-  const primaryText =
-    theme === "dark"
-      ? "text-white"
-      : "text-gray-900";
-
-  const secondaryText =
-    theme === "dark"
-      ? "text-gray-400"
-      : "text-gray-600";
-
-  const mutedText =
-  theme === "dark"
-    ? "text-gray-500"
-    : "text-gray-600";
-
-  const scoreColor =
-    score >= 90
-      ? {
-          stroke: "#10b981",
-          text: "text-emerald-400",
-          badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-        }
-      : score >= 70
-      ? {
-          stroke: "#38bdf8",
-          text: "text-sky-400",
-          badge: "bg-sky-500/10 text-sky-400 border-sky-500/20",
-        }
-      : {
-          stroke: "#f59e0b",
-          text: "text-amber-400",
-          badge: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-        };
+  const scoreVar =
+    score >= 75
+      ? "var(--score-strong)"
+      : score >= 50
+      ? "var(--score-mid)"
+      : "var(--score-low)";
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${theme === "dark"? "bg-[#0a0a0f] text-white": "bg-gray-100 text-gray-900"}`}>
-
-      <div className={`fixed inset-0 pointer-events-none ${theme === "dark"? "bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,_rgba(99,102,241,0.12),_transparent)]": "bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,_rgba(99,102,241,0.06),_transparent)]"}`}/>
-
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
       <div className="relative z-10">
 
         <Navbar />
 
-        <div className="max-w-2xl mx-auto px-4 pt-8 pb-16 sm:pt-10 sm:pb-24">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 sm:pt-10 sm:pb-24">
 
         {/* Hero */}
         <div className="text-center mb-12">
-          <div
-            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs mb-6 ${
-              theme === "dark"
-                ? "bg-white/5 border border-white/10 text-gray-400"
-                : "bg-white border border-gray-300 text-gray-700"
-            }`}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            AI Recruiter Assistant
-          </div>
+          <p className="eyebrow mb-4">AI Recruiter Assistant</p>
 
-          <h1
-            className={`text-4xl sm:text-5xl font-extrabold tracking-tight mb-4 leading-tight ${theme === "dark"
-              ? "bg-gradient-to-br from-white via-gray-200 to-gray-500 bg-clip-text text-transparent"
-              : "text-gray-900"
-            }`}
-          >
-            Smart Resume<br />Analyzer
+          <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight mb-4 leading-tight text-[var(--ink)]">
+            Smart Resume Analyzer
           </h1>
 
-          <p className={`${secondaryText} text-base sm:text-lg max-w-md mx-auto leading-relaxed`}>
+          <p className={`${secondaryText} text-base sm:text-lg max-w-xl mx-auto leading-relaxed`}>
             Upload a resume and paste a job description to receive an AI-powered candidate match analysis.
           </p>
         </div>
 
+        {/* Workspace: inputs on the left, results on the right (stacks on mobile) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+        {/* ── Left column: inputs ── */}
+        <div>
+
         {/* Upload */}
-        <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6 sm:p-8 mb-6`}>
+        <div className={`${cardClass} p-6 sm:p-8 mb-6`}>
 
           <label
             htmlFor="resume-input"
@@ -513,15 +414,15 @@ const handleDrop = (e) => {
             onDragOver={handleDrag}
             onDragLeave={handleDrag}
             onDrop={handleDrop}
-            className={`flex flex-col items-center justify-center gap-4 w-full border-2 border-dashed rounded-xl p-8 sm:p-10 cursor-pointer transition-all duration-300 group 
-            ${dragActive ? "border-cyan-400 bg-cyan-500/10" : "border-white/15 hover:border-white/30 hover:bg-white/[0.03]"}`}
+            className={`flex flex-col items-center justify-center gap-4 w-full border-2 border-dashed rounded-[var(--radius)] p-8 sm:p-10 cursor-pointer transition-colors duration-300 group
+            ${dragActive ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--hairline)] hover:border-[var(--muted)] hover:bg-[var(--surface-2)]"}`}
           >
-            <div className="w-14 h-14 rounded-full bg-white/[0.06] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <div className="w-14 h-14 rounded-full bg-[var(--surface-2)] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <svg
                 className={`w-7 h-7 transition-colors duration-300 ${
                     dragActive
-                        ? "text-cyan-400"
-                        : "text-gray-400 group-hover:text-white"
+                        ? "text-[var(--accent)]"
+                        : "text-[var(--muted)] group-hover:text-[var(--ink)]"
                 }`}
                 fill="none"
                 stroke="currentColor"
@@ -539,7 +440,7 @@ const handleDrop = (e) => {
             {selectedFile ? (
               <div className="text-center">
                 <p className={`${primaryText} font-medium text-sm break-all`}>{selectedFile.name}</p>
-                <p className="text-gray-500 text-xs mt-1">
+                <p className="text-[var(--faint)] text-xs mt-1">
                   {formatFileSize(selectedFile.size)} · Click to change
                 </p>
               </div>
@@ -548,25 +449,25 @@ const handleDrop = (e) => {
 
                 {dragActive ? (
                   <>
-                    <p className="text-lg font-semibold text-cyan-400">
-                      📄 Drag & Drop Resume Here
+                    <p className="text-lg font-semibold text-[var(--accent)]">
+                      Drag &amp; drop your resume
                     </p>
 
-                    <p className="text-sm text-gray-400 mt-2">
+                    <p className="text-sm text-[var(--muted)] mt-2">
                       Release to upload
                     </p>
                   </>
                 ) : (
                   <>
                     <p className={`${secondaryText} text-sm`}>
-                      📄 Drop Resume Here
+                      Drop your resume here
                     </p>
 
                     <p className={`${primaryText} text-sm mt-2`}>
                       or Click to Upload
                     </p>
 
-                    <p className="text-gray-600 text-xs mt-3">
+                    <p className="text-[var(--muted)] text-xs mt-3">
                       Supports PDF, DOC, DOCX
                     </p>
                   </>
@@ -587,12 +488,12 @@ const handleDrop = (e) => {
         </div>
 
         {/* Job Description */}
-        <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6 sm:p-8 mb-6`}>
+        <div className={`${cardClass} p-6 sm:p-8 mb-6`}>
 
           {/* Card header */}
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-8 h-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
@@ -617,23 +518,7 @@ const handleDrop = (e) => {
                   setJobDescription(jobTemplates[e.target.value] || "");
                 }
               }}
-              className={`
-              w-full
-              rounded-xl
-              px-4
-              py-3
-              outline-none
-              transition-all
-              duration-200
-              focus:border-indigo-500/60
-              focus:ring-2
-              focus:ring-indigo-500/15
-              ${
-                theme === "dark"
-                  ? "bg-white/[0.04] border border-white/10 text-gray-300"
-                  : "bg-white border border-gray-300 text-gray-900"
-              }
-              `}
+              className="w-full rounded-[var(--radius)] px-4 py-3 outline-none transition-colors duration-200 bg-[var(--surface-2)] border border-[var(--hairline)] text-[var(--ink)] focus:border-[var(--accent)]"
             >
               <option value="">Choose a Job Template</option>
               <option value="frontend">Frontend Developer</option>
@@ -659,25 +544,7 @@ const handleDrop = (e) => {
               placeholder="Paste the full job description here — required skills, responsibilities, qualifications..."
               rows={8}
               maxLength={5000}
-              className={`
-              w-full
-              resize-none
-              rounded-xl
-              px-4
-              py-3.5
-              outline-none
-              transition-all
-              duration-200
-              focus:border-indigo-500/60
-              focus:ring-2
-              focus:ring-indigo-500/15
-              hover:border-white/20
-              ${
-                theme === "dark"
-                  ? "bg-white/[0.04] border border-white/10 text-gray-300 placeholder-gray-600"
-                  : "bg-white border border-gray-300 text-gray-900 placeholder-gray-400"
-              }
-              `}
+              className="w-full resize-none rounded-[var(--radius)] px-4 py-3.5 outline-none transition-colors duration-200 bg-[var(--surface-2)] border border-[var(--hairline)] text-[var(--ink)] placeholder-[var(--faint)] focus:border-[var(--accent)]"
             />
             {/* Character counter */}
             <span className={`absolute bottom-3 right-3.5 text-[11px] ${mutedText} pointer-events-none select-none tabular-nums`}>
@@ -691,37 +558,56 @@ const handleDrop = (e) => {
         <button
           onClick={handleUpload}
           disabled={loading || !selectedFile || !jobDescription.trim()}
-          className="w-full py-3.5 px-6 rounded-xl font-semibold text-sm bg-white text-black hover:bg-gray-100 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] active:translate-y-0 mb-6"
+          className="btn-accent w-full py-3.5 px-6 font-semibold text-sm hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 active:translate-y-0 mb-6"
         >
           {loading ? "Processing..." : "Analyze Match →"}
         </button>
 
+        </div>
+        {/* ── End left column ── */}
+
+        {/* ── Right column: results ── */}
+        <div className="lg:sticky lg:top-24 space-y-6">
+
+        {/* Empty placeholder (nothing run yet) */}
+        {!loading && !result && (
+          <div className={`${cardClass} p-10 flex flex-col items-center justify-center text-center min-h-[320px]`}>
+            <div className="w-14 h-14 rounded-full bg-[var(--accent-soft)] flex items-center justify-center mb-4">
+              <FiFileText className="w-6 h-6 text-[var(--accent)]" />
+            </div>
+            <p className={`font-display text-lg font-semibold ${primaryText}`}>Your analysis appears here</p>
+            <p className={`text-sm mt-1.5 max-w-xs ${secondaryText}`}>
+              Upload a resume and a job description, then run the match to see the ATS score and recruiter insights.
+            </p>
+          </div>
+        )}
+
         {/* Loading */}
         {loading && (
-          <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-12 flex flex-col items-center gap-5 fade-in-up`}>
+          <div className={`${cardClass} p-12 flex flex-col items-center gap-5 fade-in-up`}>
             <div className="relative w-12 h-12">
-              <div className="absolute inset-0 rounded-full border-2 border-white/10" />
-              <div className="absolute inset-0 rounded-full border-2 border-t-white border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+              <div className="absolute inset-0 rounded-full border-2 border-[var(--hairline)]" />
+              <div className="absolute inset-0 rounded-full border-2 border-t-[var(--accent)] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
             </div>
             <div className="text-center">
               <p className={`${primaryText} font-semibold`}>
                   {loadingSteps[loadingStep]}
               </p>
 
-              <p className="text-gray-500 text-sm mt-2">
+              <p className="text-[var(--faint)] text-sm mt-2">
                   Please wait while our AI recruiter analyzes the candidate profile.
               </p>
 
-              <div className="w-full bg-white/10 rounded-full h-2 mt-6 overflow-hidden">
+              <div className="w-full bg-[var(--surface-2)] rounded-full h-2 mt-6 overflow-hidden">
                   <div
-                      className="bg-indigo-500 h-2 rounded-full transition-all duration-700"
+                      className="bg-[var(--accent)] h-2 rounded-full transition-all duration-700"
                       style={{
                           width: `${((loadingStep + 1) / loadingSteps.length) * 100}%`
                       }}
                   />
               </div>
 
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-[var(--faint)] mt-2">
                   Step {loadingStep + 1} of {loadingSteps.length}
               </p>
 
@@ -748,317 +634,18 @@ const handleDrop = (e) => {
           </div>
         )}
 
-        {/* Analysis History */}
-        {/* Analysis History */}
-        <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6 mb-6`}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className={`text-lg font-semibold ${primaryText}`}>🕒 Recent Analyses</h2>
-            {history.length > 0 && (
-              <button 
-                onClick={confirmClearHistory} 
-                className={`text-sm px-3 py-1.5 rounded-lg transition-all duration-200 border font-medium
-                  ${theme === "dark"
-                    ? "border-transparent text-gray-400 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20"
-                    : "border-transparent text-gray-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200"}
-                `}
-              >
-                Clear All
-              </button>
-            )}
-          </div>
-
-          {history.length === 0 ? (
-            <div className={`flex flex-col items-center justify-center py-10 px-4 text-center rounded-xl border border-dashed ${theme === "dark" ? "border-white/10 bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
-              <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center mb-3">
-                <FiClock className="w-5 h-5 text-indigo-400" />
-              </div>
-              <p className={`text-sm font-medium ${primaryText}`}>No recent analyses yet</p>
-              <p className={`text-xs mt-1 ${secondaryText}`}>Your past resume scans will appear here.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {history.map((item) => (
-                <div
-                    key={item._id}
-                    className={`w-full rounded-xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg
-                      ${theme === "dark"? "border border-white/10 bg-white/[0.03] hover:shadow-white/5" : "border border-gray-200 bg-gray-50 hover:shadow-gray-200"}
-                    `}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className={`font-medium ${primaryText}`}>{item.jobTitle}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-indigo-400">{item.matchScore}%</p>
-                      <p className="text-xs text-gray-400">{item.recommendation}</p>
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2 mt-4">
-                    <button
-                      onClick={() =>
-                        setResult({
-                          success: true,
-                          analysis: item.analysis,
-                        })
-                      }
-                      className={`px-4 py-1.5 rounded-lg text-sm transition-all duration-200 border font-medium
-                        ${theme === "dark"
-                          ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 hover:border-indigo-500/50"
-                          : "border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300"}
-                      `}
-                    >
-                      Open
-                    </button>
-                    <button
-                      onClick={() => confirmDeleteHistoryItem(item._id)}
-                      className={`px-4 py-1.5 rounded-lg text-sm transition-all duration-200 border font-medium
-                        ${theme === "dark"
-                          ? "border-white/10 text-gray-400 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400"
-                          : "border-gray-200 text-gray-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"}
-                      `}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-
         {/* Results */}
         {!loading && result?.success && result.analysis && (
-          <div ref={resultRef} className="space-y-5 fade-in-up">
-
-            {/* ATS Score */}
-            <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-8`}>
-              <div className="flex flex-col items-center gap-5">
-                <div className="flex flex-col items-center gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-                    Match Score
-                  </p>
-                  <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${scoreColor.badge}`}>
-                    {result.analysis.recommendation}
-                  </span>
-                </div>
-
-                <div className="relative w-40 h-40">
-                  <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-                    <circle
-                      cx="60" cy="60" r="54"
-                      fill="none"
-                      stroke="rgba(255,255,255,0.06)"
-                      strokeWidth="8"
-                    />
-                    <circle
-                      cx="60" cy="60" r="54"
-                      fill="none"
-                      stroke={scoreColor.stroke}
-                      strokeWidth="8"
-                      strokeLinecap="round"
-                      strokeDasharray={circumference}
-                      className="score-ring-animate"
-                      style={{ "--score-offset": scoreOffset }}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`text-4xl font-bold ${scoreColor.text}`}>{score}</span>
-                    <span className="text-gray-500 text-xs mt-0.5">/ 100</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Download Report */}
-            <div className="flex justify-center">
-              <button onClick={downloadPDF} className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 transition-all duration-200 text-white font-medium shadow-lg hover:shadow-indigo-500/30">
-                📄 Download PDF Report
-              </button>
-            </div>
-
-            {/* Matched Skills */}
-            {result.analysis.matchedSkills?.length > 0 && (
-              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <h2 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider">Matched Skills</h2>
-                </div>
-                <ul className="space-y-2.5">
-                  {result.analysis.matchedSkills.map((item, i) => (
-                    <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Missing Skills */}
-            {result.analysis.missingSkills?.length > 0 && (
-              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <h2 className="text-sm font-semibold text-red-400 uppercase tracking-wider">Missing Skills</h2>
-                </div>
-                <ul className="space-y-2.5">
-                  {result.analysis.missingSkills.map((item, i) => (
-                    <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-2 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Matched Keywords */}
-            {result.analysis.matchedKeywords?.length > 0 && (
-              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-7 h-7 rounded-lg bg-green-500/15 flex items-center justify-center">
-                    ✓
-                  </div>
-
-                  <h2 className="text-sm font-semibold text-green-400 uppercase tracking-wider">
-                    Matched Keywords
-                  </h2>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {result.analysis.matchedKeywords.map((keyword, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-300 text-sm"
-                    >
-                      {keyword}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Missing Keywords */}
-            {result.analysis.missingKeywords?.length > 0 && (
-              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center">
-                    ✕
-                  </div>
-
-                  <h2 className="text-sm font-semibold text-red-400 uppercase tracking-wider">
-                    Missing Keywords
-                  </h2>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {result.analysis.missingKeywords.map((keyword, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-300 text-sm"
-                    >
-                      {keyword}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Candidate Strengths */}
-            {result.analysis.strengths?.length > 0 && (
-              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                    </svg>
-                  </div>
-                  <h2 className="text-sm font-semibold text-indigo-400 uppercase tracking-wider">Candidate Strengths</h2>
-                </div>
-                <ul className="space-y-2.5">
-                  {result.analysis.strengths.map((item, i) => (
-                    <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Skill Gaps */}
-            {result.analysis.skillGaps?.length > 0 && (
-              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                    </svg>
-                  </div>
-                  <h2 className="text-sm font-semibold text-amber-400 uppercase tracking-wider">Skill Gaps</h2>
-                </div>
-                <ul className="space-y-2.5">
-                  {result.analysis.skillGaps.map((item, i) => (
-                    <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Reasoning */}
-            {result.analysis.reasoning && (
-              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-7 h-7 rounded-lg bg-gray-500/15 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                  </div>
-                  <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Reasoning</h2>
-                </div>
-                <p className={`text-sm leading-relaxed ${secondaryText}`}>{result.analysis.reasoning}</p>
-              </div>
-            )}
-
-            {/* Suggestions */}
-            {result.analysis.suggestions?.length > 0 && (
-              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-7 h-7 rounded-lg bg-sky-500/15 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
-                    </svg>
-                  </div>
-                  <h2 className="text-sm font-semibold text-sky-400 uppercase tracking-wider">Suggestions</h2>
-                </div>
-                <ul className="space-y-2.5">
-                  {result.analysis.suggestions.map((item, i) => (
-                    <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 mt-2 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
+          <div ref={resultRef}>
+            <AnalysisResult analysis={result.analysis} />
           </div>
         )}
+
+        </div>
+        {/* ── End right column ── */}
+
+        </div>
+        {/* ── End workspace grid ── */}
 
         <p className={`text-center ${mutedText} text-xs mt-14`}>
           Built with React • Express • Tailwind CSS • Gemini AI

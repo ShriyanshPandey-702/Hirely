@@ -1,33 +1,172 @@
 @import "tailwindcss";
 
+/* ============================================================
+   DESIGN TOKENS
+   Light  = "Dossier"    (editorial, ivory paper, forest green)
+   Dark   = "Instrument" (tinted charcoal, amber signal, mono)
+   Theme switches via the .dark class on <html>.
+   ============================================================ */
+:root {
+  /* surfaces */
+  --bg: #f1ece1;
+  --surface: #fbf8f1;
+  --surface-2: #f5f1e7;
+  --hairline: #d9d2c2;
+
+  /* text */
+  --ink: #1c1a15;
+  --muted: #726b59;
+  --faint: #9a9384;
+
+  /* accent + semantics */
+  --accent: #35543f;
+  --accent-ink: #f1ece1;
+  --accent-soft: rgba(53, 84, 63, 0.1);
+  --gold: #9c7e33;
+
+  --score-strong: #35543f;
+  --score-mid: #a8781f;
+  --score-low: #8a3a34;
+
+  --chip-match-bg: rgba(53, 84, 63, 0.1);
+  --chip-match-ink: #35543f;
+  --danger: #8a3a34;
+
+  /* form */
+  --radius: 3px;
+  --radius-lg: 4px;
+  --shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+  --ring-track: #d9d2c2;
+
+  /* type */
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-body: "Public Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+.dark {
+  --bg: #131417;
+  --surface: #1c1e23;
+  --surface-2: #23262d;
+  --hairline: #2c2f37;
+
+  --ink: #e6e7ea;
+  --muted: #9a9da5;
+  --faint: #6e727c;
+
+  --accent: #e8a33d;
+  --accent-ink: #131417;
+  --accent-soft: rgba(232, 163, 61, 0.14);
+  --gold: #e8a33d;
+
+  --score-strong: #57c08a;
+  --score-mid: #e8a33d;
+  --score-low: #e5715b;
+
+  --chip-match-bg: rgba(232, 163, 61, 0.14);
+  --chip-match-ink: #e8a33d;
+  --danger: #e5715b;
+
+  --radius: 8px;
+  --radius-lg: 10px;
+  --shadow: none;
+  --ring-track: #2c2f37;
+
+  --font-display: "Public Sans", system-ui, sans-serif;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
 }
 
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+}
+
+/* Fraunces reads best a touch tighter at display sizes */
+:root:not(.dark) h1,
+:root:not(.dark) h2,
+:root:not(.dark) h3 {
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+/* Monospaced utility label (eyebrows, data, meta) */
+.font-mono, .eyebrow {
+  font-family: var(--font-mono);
+}
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ============================================================
+   REUSABLE SURFACES (token-driven, theme-agnostic)
+   ============================================================ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.surface-2 {
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+}
+
+.btn-accent {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: var(--radius);
+  transition: filter 0.18s ease, transform 0.18s ease;
+}
+.btn-accent:hover { filter: brightness(1.08); }
+
+.chip-match {
+  background: var(--chip-match-bg);
+  color: var(--chip-match-ink);
+  border-radius: var(--radius);
+}
+.chip-miss {
+  border: 1px dashed var(--hairline);
+  color: var(--muted);
+  border-radius: var(--radius);
+}
+
+/* Focus visibility */
+:where(a, button, input, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
 @keyframes score-ring {
-  from {
-    stroke-dashoffset: 339.29;
-  }
-  to {
-    stroke-dashoffset: var(--score-offset);
-  }
+  from { stroke-dashoffset: 339.29; }
+  to { stroke-dashoffset: var(--score-offset); }
 }
-
 .score-ring-animate {
   animation: score-ring 1.2s ease-out forwards;
 }
 
 @keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
 .fade-in-up {
   animation: fade-in-up 0.5s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .score-ring-animate, .fade-in-up { animation: none; }
 }

@@ -58,34 +58,28 @@ function Login() {
   };
 
   // Theme-aware styles matching Dashboard & Signup
-  const cardClass = theme === "dark"
-    ? "bg-white/[0.04] border border-white/10"
-    : "bg-white border border-gray-200 shadow-sm";
+  const cardClass = "card";
 
-  const primaryText = theme === "dark" ? "text-white" : "text-gray-900";
-  const secondaryText = theme === "dark" ? "text-gray-400" : "text-gray-600";
+  const primaryText = "text-[var(--ink)]";
+  const secondaryText = "text-[var(--muted)]";
 
-  const inputClass = `w-full rounded-xl px-4 py-3.5 outline-none transition-all duration-200 focus:ring-2 focus:ring-indigo-500/15 ${
-    theme === "dark"
-      ? "bg-white/[0.04] border-white/10 text-gray-300 placeholder-gray-600 hover:border-white/20 focus:border-indigo-500/60 focus:bg-white/[0.06]"
-      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 hover:border-gray-400 focus:border-indigo-500"
-  }`;
+  const inputClass = "w-full rounded-[var(--radius)] px-4 py-3.5 outline-none transition-colors duration-200 border bg-[var(--surface-2)] border-[var(--hairline)] text-[var(--ink)] placeholder-[var(--faint)] focus:border-[var(--accent)]";
 
   return (
-    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-300 ${theme === "dark" ? "bg-[#0a0a0f]" : "bg-gray-100"}`}>
+    <div className={`min-h-screen flex items-center justify-center p-4 bg-[var(--bg)] text-[var(--ink)]`}>
       
       {/* Background Gradient matching Dashboard */}
-      <div className={`fixed inset-0 pointer-events-none ${theme === "dark" ? "bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,_rgba(99,102,241,0.12),_transparent)]" : "bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,_rgba(99,102,241,0.06),_transparent)]"}`} />
+      
 
-      <div className={`relative z-10 w-full max-w-md rounded-2xl ${cardClass} backdrop-blur-sm p-8 sm:p-10 fade-in-up`}>
+      <div className={`relative z-10 w-full max-w-md ${cardClass} p-8 sm:p-10 fade-in-up`}>
         
         <div className="text-center mb-8">
-          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs mb-6 ${theme === "dark" ? "bg-white/5 border border-white/10 text-gray-400" : "bg-white border border-gray-300 text-gray-700"}`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs mb-6 bg-[var(--surface-2)] border border-[var(--hairline)] text-[var(--muted)]`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
             AI Recruiter Assistant
           </div>
           
-          <h1 className={`text-2xl sm:text-3xl font-extrabold tracking-tight mb-2 ${theme === "dark" ? "bg-gradient-to-br from-white via-gray-200 to-gray-500 bg-clip-text text-transparent" : "text-gray-900"}`}>
+          <h1 className={`font-display text-2xl sm:text-3xl font-semibold tracking-tight mb-2 text-[var(--ink)]`}>
             Welcome Back
           </h1>
           <p className={`text-sm ${secondaryText}`}>
@@ -121,7 +115,7 @@ function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${theme === "dark" ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"}`}
+                className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors text-[var(--muted)] hover:text-[var(--ink)]`}
               >
                 {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
               </button>
@@ -132,7 +126,7 @@ function Login() {
           <div className="flex justify-end">
             <Link
               to="/forgot-password"
-              className={`text-xs font-medium transition-colors ${theme === "dark" ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+              className={`text-xs font-medium transition-colors text-[var(--accent)] hover:brightness-110`}
             >
               Forgot Password?
             </Link>
@@ -144,8 +138,8 @@ function Login() {
             disabled={loading}
             className={`w-full mt-2 py-3.5 px-6 rounded-xl font-semibold text-sm transition-all duration-200 
               ${theme === "dark" 
-                ? "bg-white text-black hover:bg-gray-100 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-white/10" 
-                : "bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/30"} 
+                ? "btn-accent" 
+                : "btn-accent"} 
               disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99] active:translate-y-0 flex justify-center items-center gap-2`}
           >
             {loading ? (
@@ -164,7 +158,7 @@ function Login() {
           Don't have an account?{" "}
           <Link
             to="/signup"
-            className={`font-medium transition-colors ${theme === "dark" ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+            className={`font-medium transition-colors text-[var(--accent)] hover:brightness-110`}
           >
             Sign up here
           </Link>

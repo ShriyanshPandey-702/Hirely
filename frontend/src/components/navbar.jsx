@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import api from "../utils/api";
 import ConfirmationModal from "./ConfirmationModal";
 import {
   FiSun,
@@ -26,48 +27,55 @@ function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    api
+      .get("/auth/me")
+      .then((r) => active && setUser(r.data.user))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const initials = (user?.name || "?")
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   const doLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
   };
 
-  const shell =
-    theme === "dark"
-      ? "bg-[#0a0a0f]/80 border-white/10"
-      : "bg-white/80 border-gray-200";
-
   const linkBase =
-    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200";
+    "flex items-center gap-2 px-3 py-2 rounded-[var(--radius)] text-sm font-medium transition-colors duration-200";
 
   const linkClass = ({ isActive }) =>
     `${linkBase} ${
       isActive
-        ? theme === "dark"
-          ? "bg-white/10 text-white"
-          : "bg-indigo-50 text-indigo-700"
-        : theme === "dark"
-        ? "text-gray-400 hover:text-white hover:bg-white/5"
-        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+        : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)]"
     }`;
 
-  const iconBtn = `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${
-    theme === "dark"
-      ? "bg-white/[0.04] border-white/10 text-gray-300 hover:bg-white/10"
-      : "bg-white border-gray-300 text-gray-700 hover:bg-gray-100"
-  }`;
+  const iconBtn =
+    "flex items-center justify-center gap-2 px-3 py-2 rounded-[var(--radius)] text-sm font-medium transition-colors duration-200 border border-[var(--hairline)] bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--ink)]";
 
   return (
     <>
-      <header className={`sticky top-0 z-40 backdrop-blur-md border-b ${shell}`}>
-        <div className="max-w-5xl mx-auto px-4">
+      <header className="sticky top-0 z-40 backdrop-blur-md border-b border-[var(--hairline)] bg-[var(--bg)]/85">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Brand */}
             <NavLink to="/" className="flex items-center gap-2.5 flex-shrink-0">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
-                <span className="text-indigo-400 text-lg">📄</span>
+              <div className="w-8 h-8 rounded-[var(--radius)] bg-[var(--accent)] flex items-center justify-center text-[var(--accent-ink)] font-bold text-sm">
+                R
               </div>
-              <span className={`font-bold tracking-tight hidden sm:block ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+              <span className="font-display font-semibold tracking-tight hidden sm:block text-[var(--ink)]">
                 Resume Analyzer
               </span>
             </NavLink>
@@ -90,15 +98,33 @@ function Navbar() {
 
               <button
                 onClick={() => setLogoutOpen(true)}
-                className={`hidden md:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${
-                  theme === "dark"
-                    ? "bg-white/[0.04] border-white/10 text-gray-300 hover:border-red-500/50 hover:text-red-400 hover:bg-red-500/10"
-                    : "bg-white border-gray-300 text-gray-700 hover:border-red-500/50 hover:text-red-600 hover:bg-red-50"
-                }`}
+                className="hidden md:flex items-center gap-2 px-3 py-2 rounded-[var(--radius)] text-sm font-medium transition-colors duration-200 border border-[var(--hairline)] bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--danger)] hover:border-[var(--danger)]"
               >
                 <FiLogOut />
                 <span className="hidden lg:inline">Logout</span>
               </button>
+
+              {/* Profile avatar */}
+              <NavLink
+                to="/profile"
+                title="Profile"
+                aria-label="Profile"
+                className={({ isActive }) =>
+                  `w-9 h-9 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 border transition-all duration-200 ${
+                    isActive
+                      ? "border-[var(--accent)] ring-2 ring-[var(--accent-soft)]"
+                      : "border-[var(--hairline)] hover:border-[var(--accent)]"
+                  }`
+                }
+              >
+                {user?.avatar ? (
+                  <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xs font-bold text-[var(--accent)] bg-[var(--accent-soft)] w-full h-full flex items-center justify-center">
+                    {initials}
+                  </span>
+                )}
+              </NavLink>
 
               {/* Mobile menu toggle */}
               <button
@@ -113,7 +139,7 @@ function Navbar() {
 
           {/* Mobile nav */}
           {mobileOpen && (
-            <nav className="md:hidden pb-4 flex flex-col gap-1 fade-in">
+            <nav className="md:hidden pb-4 flex flex-col gap-1 fade-in-up">
               {links.map(({ to, label, icon: Icon, end }) => (
                 <NavLink
                   key={to}
@@ -131,11 +157,7 @@ function Navbar() {
                   setMobileOpen(false);
                   setLogoutOpen(true);
                 }}
-                className={`${linkBase} ${
-                  theme === "dark"
-                    ? "text-red-400 hover:bg-red-500/10"
-                    : "text-red-600 hover:bg-red-50"
-                }`}
+                className={`${linkBase} text-[var(--danger)] hover:bg-[var(--surface-2)]`}
               >
                 <FiLogOut className="w-4 h-4" />
                 Logout

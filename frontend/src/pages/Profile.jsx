@@ -7,10 +7,10 @@ import { FiUser, FiMail, FiCalendar, FiSave, FiFileText, FiTrendingUp, FiAward, 
 
 function StatCard({ icon: Icon, label, value, cardClass, secondaryText, primaryText }) {
   return (
-    <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-5`}>
+    <div className={`${cardClass} p-5`}>
       <div className="flex items-center gap-2 mb-2">
-        <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center">
-          <Icon className="w-4 h-4 text-indigo-400" />
+        <div className="w-7 h-7 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center">
+          <Icon className="w-4 h-4 text-[var(--accent)]" />
         </div>
         <span className={`text-xs font-medium ${secondaryText}`}>{label}</span>
       </div>
@@ -30,18 +30,12 @@ function Profile() {
   const fileInputRef = useRef(null);
   const [form, setForm] = useState({ name: "", email: "" });
 
-  const cardClass =
-    theme === "dark"
-      ? "bg-white/[0.04] border border-white/10"
-      : "bg-white border border-gray-200 shadow-sm";
-  const primaryText = theme === "dark" ? "text-white" : "text-gray-900";
-  const secondaryText = theme === "dark" ? "text-gray-400" : "text-gray-600";
+  const cardClass = "card";
+  const primaryText = "text-[var(--ink)]";
+  const secondaryText = "text-[var(--muted)]";
 
-  const inputClass = `w-full rounded-xl pl-10 pr-4 py-3 outline-none transition-all duration-200 focus:ring-2 focus:ring-indigo-500/15 border ${
-    theme === "dark"
-      ? "bg-white/[0.04] border-white/10 text-gray-200 placeholder-gray-600 focus:border-indigo-500/60"
-      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500"
-  }`;
+  const inputClass =
+    "w-full rounded-[var(--radius)] pl-10 pr-4 py-3 outline-none transition-colors duration-200 border bg-[var(--surface-2)] border-[var(--hairline)] text-[var(--ink)] placeholder-[var(--faint)] focus:border-[var(--accent)]";
 
   useEffect(() => {
     (async () => {
@@ -131,27 +125,25 @@ function Profile() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${theme === "dark" ? "bg-[#0a0a0f] text-white" : "bg-gray-100 text-gray-900"}`}>
-      <div className={`fixed inset-0 pointer-events-none ${theme === "dark" ? "bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,_rgba(99,102,241,0.12),_transparent)]" : "bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,_rgba(99,102,241,0.06),_transparent)]"}`} />
-
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
       <div className="relative z-10">
         <Navbar />
 
-        <div className="max-w-3xl mx-auto px-4 py-8 sm:py-10">
-          <h1 className={`text-2xl sm:text-3xl font-extrabold tracking-tight mb-6 ${primaryText}`}>Profile</h1>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+          <h1 className={`font-display text-2xl sm:text-3xl font-semibold tracking-tight mb-6 ${primaryText}`}>Profile</h1>
 
           {loading ? (
             <div className={`rounded-2xl ${cardClass} p-16 flex flex-col items-center gap-4`}>
               <div className="relative w-10 h-10">
-                <div className="absolute inset-0 rounded-full border-2 border-white/10" />
-                <div className="absolute inset-0 rounded-full border-2 border-t-indigo-400 border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                <div className="absolute inset-0 rounded-full border-2 border-[var(--hairline)]" />
+                <div className="absolute inset-0 rounded-full border-2 border-t-[var(--accent)] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
               </div>
               <p className={secondaryText}>Loading profile…</p>
             </div>
           ) : (
             <>
               {/* Identity card */}
-              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6 mb-6 flex items-center gap-5`}>
+              <div className={`${cardClass} p-6 mb-6 flex items-center gap-5`}>
                 <div className="relative flex-shrink-0">
                   {user?.avatar ? (
                     <img
@@ -160,7 +152,7 @@ function Profile() {
                       className="w-16 h-16 rounded-2xl object-cover"
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white text-xl font-bold">
+                    <div className="w-16 h-16 rounded-[var(--radius)] bg-[var(--accent)] flex items-center justify-center text-[var(--accent-ink)] text-xl font-bold font-display">
                       {initials}
                     </div>
                   )}
@@ -176,11 +168,7 @@ function Profile() {
                   <label
                     htmlFor="avatar-input"
                     title="Change photo"
-                    className={`absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 border-2 ${
-                      theme === "dark"
-                        ? "bg-indigo-600 border-[#0a0a0f] text-white hover:bg-indigo-500"
-                        : "bg-indigo-600 border-gray-100 text-white hover:bg-indigo-700"
-                    } ${uploadingAvatar ? "opacity-70 cursor-wait" : ""}`}
+                    className={`absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 border-2 border-[var(--bg)] bg-[var(--accent)] text-[var(--accent-ink)] hover:brightness-110 ${uploadingAvatar ? "opacity-70 cursor-wait" : ""}`}
                   >
                     {uploadingAvatar ? (
                       <span className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
@@ -193,7 +181,7 @@ function Profile() {
                   <p className={`text-xl font-bold truncate ${primaryText}`}>{user?.name}</p>
                   <p className={`text-sm truncate ${secondaryText}`}>{user?.email}</p>
                   {user?.createdAt && (
-                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
+                    <p className="text-xs text-[var(--faint)] mt-1 flex items-center gap-1.5">
                       <FiCalendar className="w-3 h-3" />
                       Joined {new Date(user.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}
                     </p>
@@ -210,7 +198,7 @@ function Profile() {
               </div>
 
               {/* Edit form */}
-              <div className={`rounded-2xl ${cardClass} backdrop-blur-sm p-6`}>
+              <div className={`${cardClass} p-6`}>
                 <h2 className={`text-sm font-semibold uppercase tracking-wider mb-5 ${secondaryText}`}>Edit Details</h2>
                 <form onSubmit={handleSave} className="space-y-4">
                   <div className="relative">
@@ -235,7 +223,7 @@ function Profile() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl font-semibold text-sm bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn-accent flex items-center justify-center gap-2 w-full py-3 px-6 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <FiSave />
                     {saving ? "Saving…" : "Save Changes"}
