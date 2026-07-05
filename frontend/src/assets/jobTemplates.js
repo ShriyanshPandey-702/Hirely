@@ -149,7 +149,7 @@ Deploy applications.
 Automate CI/CD pipelines.
 Monitor system performance.`,
 
-  aiEngineer: `
+  AIEngineer: `
 AI Engineer
 
 Required Skills:
