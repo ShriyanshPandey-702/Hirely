@@ -388,7 +388,9 @@ const handleDrop = (e) => {
 
         {/* Hero */}
         <div className="text-center mb-12">
-          <img src="/Hirely_lockup.png" alt="Hirely" className="w-full max-w-[220px] sm:max-w-[240px] mx-auto mb-5" />
+          <div className="logo-plate mb-5">
+            <img src="/Hirely_lockup.png" alt="Hirely" className="w-[190px] sm:w-[210px]" />
+          </div>
 
           <p className={`${secondaryText} text-base sm:text-lg max-w-xl mx-auto leading-relaxed`}>
             Upload a resume and paste a job description to receive an AI-powered candidate match analysis.

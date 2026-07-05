@@ -88,11 +88,13 @@ function Landing() {
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-20 sm:pt-24 text-center">
-        <img
-          src="/Hirely_lockup.png"
-          alt="Hirely — precision recruitment matching"
-          className="w-full max-w-[260px] sm:max-w-xs mx-auto mb-8"
-        />
+        <div className="logo-plate mb-8">
+          <img
+            src="/Hirely_lockup.png"
+            alt="Hirely — precision recruitment matching"
+            className="w-[220px] sm:w-[260px]"
+          />
+        </div>
 
         <h1 className="font-display text-4xl sm:text-6xl font-semibold tracking-tight leading-[1.05] mb-5 text-[var(--ink)] text-balance">
           Match every résumé to the job — instantly.
