@@ -173,6 +173,63 @@ h1, h2, h3, h4, .font-display {
   border-radius: var(--radius);
 }
 
+/* ============================================================
+   TOAST NOTIFICATIONS (react-toastify) — mapped to design tokens
+   Both toastify light & dark colors point at our adaptive tokens,
+   so a single definition works for both app themes.
+   ============================================================ */
+:root {
+  --toastify-color-light: var(--surface);
+  --toastify-color-dark: var(--surface);
+  --toastify-text-color-light: var(--ink);
+  --toastify-text-color-dark: var(--ink);
+  --toastify-color-success: var(--score-strong);
+  --toastify-color-error: var(--danger);
+  --toastify-color-info: var(--accent);
+  --toastify-color-warning: var(--score-mid);
+  --toastify-icon-color-success: var(--score-strong);
+  --toastify-icon-color-error: var(--danger);
+  --toastify-icon-color-info: var(--accent);
+  --toastify-icon-color-warning: var(--score-mid);
+  --toastify-color-progress-success: var(--score-strong);
+  --toastify-color-progress-error: var(--danger);
+  --toastify-color-progress-info: var(--accent);
+  --toastify-color-progress-warning: var(--score-mid);
+  --toastify-font-family: var(--font-body);
+  --toastify-toast-bd-radius: var(--radius);
+}
+.Toastify__toast {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: 0 14px 34px -18px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-body);
+}
+.Toastify__toast-body {
+  font-weight: 500;
+  color: var(--ink) !important;
+}
+.Toastify__close-button {
+  color: var(--muted) !important;
+  opacity: 0.7;
+  align-self: center;
+}
+.Toastify__close-button > svg { fill: currentColor; }
+.Toastify__close-button:hover { color: var(--ink) !important; opacity: 1; }
+
+/* Status icon colours mapped to our palette */
+.Toastify__toast--success .Toastify__toast-icon svg { fill: var(--score-strong) !important; }
+.Toastify__toast--error .Toastify__toast-icon svg { fill: var(--danger) !important; }
+.Toastify__toast--info .Toastify__toast-icon svg { fill: var(--accent) !important; }
+.Toastify__toast--warning .Toastify__toast-icon svg { fill: var(--score-mid) !important; }
+
+/* Progress bar */
+.Toastify__progress-bar { background: var(--accent) !important; opacity: 0.6 !important; }
+.Toastify__toast--success .Toastify__progress-bar { background: var(--score-strong) !important; }
+.Toastify__toast--error .Toastify__progress-bar { background: var(--danger) !important; }
+.Toastify__toast--warning .Toastify__progress-bar { background: var(--score-mid) !important; }
+
 /* Focus visibility */
 :where(a, button, input, textarea, [tabindex]):focus-visible {
   outline: 2px solid var(--accent);

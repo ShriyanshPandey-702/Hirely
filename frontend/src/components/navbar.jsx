@@ -35,8 +35,14 @@ function Navbar() {
       .get("/auth/me")
       .then((r) => active && setUser(r.data.user))
       .catch(() => {});
+
+    // Live-update when the profile page changes the photo / name
+    const onUserChanged = (e) => setUser(e.detail);
+    window.addEventListener("user:changed", onUserChanged);
+
     return () => {
       active = false;
+      window.removeEventListener("user:changed", onUserChanged);
     };
   }, []);
 

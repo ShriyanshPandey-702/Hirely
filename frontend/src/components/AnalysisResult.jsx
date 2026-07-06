@@ -1,20 +1,77 @@
-import { useTheme } from "../context/ThemeContext";
 import { downloadAnalysisPDF } from "../utils/generatePDF";
+import { FiDownload } from "react-icons/fi";
 
-// Renders a full AI analysis breakdown (score ring + all sections + PDF download).
-// Reused by the Dashboard (fresh result) and the History page (past result).
+// ── Small building blocks ────────────────────────────────────────────────
+
+function Section({ title, count, children, className = "" }) {
+  return (
+    <section className={`card p-6 sm:p-7 ${className}`}>
+      <header className="flex items-baseline justify-between gap-3 mb-5 pb-3 border-b border-[var(--hairline)]">
+        <h3 className="font-display text-lg font-semibold text-[var(--ink)]">{title}</h3>
+        {count != null && (
+          <span className="text-xs font-mono text-[var(--faint)] tabular-nums">
+            {count}
+          </span>
+        )}
+      </header>
+      {children}
+    </section>
+  );
+}
+
+// Editorial list: hairline-separated rows with a restrained +/– marker.
+function MarkerList({ items, tone }) {
+  const mark = tone === "pos" ? "+" : "–";
+  const color = tone === "pos" ? "var(--score-strong)" : "var(--danger)";
+  return (
+    <ul className="divide-y divide-[var(--hairline)]">
+      {items.map((it, i) => (
+        <li
+          key={i}
+          className="flex gap-3 py-2.5 first:pt-0 last:pb-0 text-sm leading-relaxed text-[var(--muted)]"
+        >
+          <span
+            className="font-mono font-bold flex-shrink-0 select-none"
+            style={{ color }}
+            aria-hidden
+          >
+            {mark}
+          </span>
+          <span>{it}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function EmptyNote({ children }) {
+  return <p className="text-sm text-[var(--faint)] italic">{children}</p>;
+}
+
+function Chips({ items, variant }) {
+  if (!items?.length) return <EmptyNote>None</EmptyNote>;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map((k, i) => (
+        <span
+          key={i}
+          className={`text-sm px-2.5 py-1 ${variant === "match" ? "chip-match" : "chip-miss"}`}
+        >
+          {k}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ── Main component ───────────────────────────────────────────────────────
+
 function AnalysisResult({ analysis }) {
-  const { theme } = useTheme();
-
   if (!analysis) return null;
-
-  const cardClass = "card";
-  const secondaryText = "text-[var(--muted)]";
 
   const circumference = 339.29;
   const score = analysis.matchScore ?? 0;
   const scoreOffset = circumference - (score / 100) * circumference;
-
   const scoreVar =
     score >= 75
       ? "var(--score-strong)"
@@ -22,29 +79,23 @@ function AnalysisResult({ analysis }) {
       ? "var(--score-mid)"
       : "var(--score-low)";
 
+  const hasSkills = analysis.matchedSkills?.length || analysis.missingSkills?.length;
+  const hasKeywords =
+    analysis.matchedKeywords?.length || analysis.missingKeywords?.length;
+
   return (
     <div className="space-y-5 fade-in-up">
-      {/* ATS Score */}
-      <div className={`${cardClass} p-8`}>
-        <div className="flex flex-col items-center gap-5">
-          <div className="flex flex-col items-center gap-2">
-            <p className="eyebrow">Match Score</p>
-            <span
-              className="text-xs font-semibold px-2.5 py-0.5 rounded-full border"
-              style={{ color: scoreVar, borderColor: scoreVar }}
-            >
-              {analysis.recommendation}
-            </span>
-          </div>
-
-          <div className="relative w-40 h-40">
+      {/* Score hero — ring beside the verdict */}
+      <div className="card p-6 sm:p-8">
+        <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
+          <div className="relative w-36 h-36 flex-shrink-0">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-              <circle cx="60" cy="60" r="54" fill="none" stroke="var(--ring-track)" strokeWidth="8" />
+              <circle cx="60" cy="60" r="54" fill="none" stroke="var(--ring-track)" strokeWidth="7" />
               <circle
                 cx="60" cy="60" r="54"
                 fill="none"
                 stroke={scoreVar}
-                strokeWidth="8"
+                strokeWidth="7"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
                 className="score-ring-animate"
@@ -52,180 +103,107 @@ function AnalysisResult({ analysis }) {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-4xl font-bold" style={{ color: scoreVar }}>{score}</span>
-              <span className="text-[var(--faint)] text-xs mt-0.5">/ 100</span>
+              <span className="text-4xl font-bold tabular-nums" style={{ color: scoreVar }}>
+                {score}
+              </span>
+              <span className="text-[var(--faint)] text-xs">/ 100</span>
             </div>
+          </div>
+
+          <div className="text-center sm:text-left flex-1">
+            <p className="eyebrow mb-2">Match Score</p>
+            <p className="font-display text-2xl sm:text-3xl font-semibold leading-tight" style={{ color: scoreVar }}>
+              {analysis.recommendation}
+            </p>
+            <button
+              onClick={() => downloadAnalysisPDF(analysis)}
+              className="btn-accent inline-flex items-center gap-2 mt-5 px-5 py-2.5 font-semibold text-sm"
+            >
+              <FiDownload /> Download report
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Download Report */}
-      <div className="flex justify-center">
-        <button
-          onClick={() => downloadAnalysisPDF(analysis)}
-          className="btn-accent px-6 py-3 font-semibold text-sm"
-        >
-          Download PDF Report
-        </button>
-      </div>
-
-      {/* Matched Skills */}
-      {analysis.matchedSkills?.length > 0 && (
-        <div className={`${cardClass} p-6`}>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+      {/* Skills — matched & missing together */}
+      {hasSkills ? (
+        <Section title="Skills">
+          <div className="grid sm:grid-cols-2 gap-x-8 gap-y-6">
+            <div>
+              <p className="eyebrow mb-3">Matched · {analysis.matchedSkills?.length || 0}</p>
+              {analysis.matchedSkills?.length ? (
+                <MarkerList items={analysis.matchedSkills} tone="pos" />
+              ) : (
+                <EmptyNote>No direct matches found.</EmptyNote>
+              )}
             </div>
-            <h2 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider">Matched Skills</h2>
-          </div>
-          <ul className="space-y-2.5">
-            {analysis.matchedSkills.map((item, i) => (
-              <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2 flex-shrink-0" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Missing Skills */}
-      {analysis.missingSkills?.length > 0 && (
-        <div className={`${cardClass} p-6`}>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div>
+              <p className="eyebrow mb-3">Missing · {analysis.missingSkills?.length || 0}</p>
+              {analysis.missingSkills?.length ? (
+                <MarkerList items={analysis.missingSkills} tone="neg" />
+              ) : (
+                <EmptyNote>Nothing major missing.</EmptyNote>
+              )}
             </div>
-            <h2 className="text-sm font-semibold text-red-400 uppercase tracking-wider">Missing Skills</h2>
           </div>
-          <ul className="space-y-2.5">
-            {analysis.missingSkills.map((item, i) => (
-              <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-2 flex-shrink-0" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        </Section>
+      ) : null}
 
-      {/* Matched Keywords */}
-      {analysis.matchedKeywords?.length > 0 && (
-        <div className={`${cardClass} p-6`}>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-green-500/15 flex items-center justify-center">✓</div>
-            <h2 className="text-sm font-semibold text-green-400 uppercase tracking-wider">Matched Keywords</h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {analysis.matchedKeywords.map((keyword, index) => (
-              <span key={index} className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-300 text-sm">
-                {keyword}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Missing Keywords */}
-      {analysis.missingKeywords?.length > 0 && (
-        <div className={`${cardClass} p-6`}>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center">✕</div>
-            <h2 className="text-sm font-semibold text-red-400 uppercase tracking-wider">Missing Keywords</h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {analysis.missingKeywords.map((keyword, index) => (
-              <span key={index} className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-300 text-sm">
-                {keyword}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Candidate Strengths */}
-      {analysis.strengths?.length > 0 && (
-        <div className={`${cardClass} p-6`}>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
+      {/* Keywords — chips */}
+      {hasKeywords ? (
+        <Section title="Keywords">
+          <div className="grid sm:grid-cols-2 gap-x-8 gap-y-6">
+            <div>
+              <p className="eyebrow mb-3">Matched · {analysis.matchedKeywords?.length || 0}</p>
+              <Chips items={analysis.matchedKeywords} variant="match" />
             </div>
-            <h2 className="text-sm font-semibold text-[var(--accent)] uppercase tracking-wider">Candidate Strengths</h2>
-          </div>
-          <ul className="space-y-2.5">
-            {analysis.strengths.map((item, i) => (
-              <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] mt-2 flex-shrink-0" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Skill Gaps */}
-      {analysis.skillGaps?.length > 0 && (
-        <div className={`${cardClass} p-6`}>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-              </svg>
+            <div>
+              <p className="eyebrow mb-3">Missing · {analysis.missingKeywords?.length || 0}</p>
+              <Chips items={analysis.missingKeywords} variant="miss" />
             </div>
-            <h2 className="text-sm font-semibold text-amber-400 uppercase tracking-wider">Skill Gaps</h2>
           </div>
-          <ul className="space-y-2.5">
-            {analysis.skillGaps.map((item, i) => (
-              <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 flex-shrink-0" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        </Section>
+      ) : null}
 
-      {/* Reasoning */}
+      {/* Strengths & Skill Gaps — side by side */}
+      {(analysis.strengths?.length || analysis.skillGaps?.length) ? (
+        <div className="grid md:grid-cols-2 gap-5">
+          {analysis.strengths?.length > 0 && (
+            <Section title="Candidate Strengths" count={analysis.strengths.length}>
+              <MarkerList items={analysis.strengths} tone="pos" />
+            </Section>
+          )}
+          {analysis.skillGaps?.length > 0 && (
+            <Section title="Skill Gaps" count={analysis.skillGaps.length}>
+              <MarkerList items={analysis.skillGaps} tone="neg" />
+            </Section>
+          )}
+        </div>
+      ) : null}
+
+      {/* Reasoning — prose */}
       {analysis.reasoning && (
-        <div className={`${cardClass} p-6`}>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-gray-500/15 flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Reasoning</h2>
-          </div>
-          <p className={`text-sm leading-relaxed ${secondaryText}`}>{analysis.reasoning}</p>
-        </div>
+        <Section title="Reasoning">
+          <p className="text-[15px] leading-relaxed text-[var(--muted)]">
+            {analysis.reasoning}
+          </p>
+        </Section>
       )}
 
-      {/* Suggestions */}
+      {/* Suggestions — numbered */}
       {analysis.suggestions?.length > 0 && (
-        <div className={`${cardClass} p-6`}>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-sky-500/15 flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
-              </svg>
-            </div>
-            <h2 className="text-sm font-semibold text-sky-400 uppercase tracking-wider">Suggestions</h2>
-          </div>
-          <ul className="space-y-2.5">
-            {analysis.suggestions.map((item, i) => (
-              <li key={i} className={`flex items-start gap-3 text-sm ${secondaryText} leading-relaxed`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-400 mt-2 flex-shrink-0" />
-                {item}
+        <Section title="Suggestions" count={analysis.suggestions.length}>
+          <ol className="space-y-4">
+            {analysis.suggestions.map((s, i) => (
+              <li key={i} className="flex gap-4">
+                <span className="font-mono text-sm font-bold text-[var(--accent)] tabular-nums flex-shrink-0 pt-0.5">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="text-sm leading-relaxed text-[var(--muted)]">{s}</span>
               </li>
             ))}
-          </ul>
-        </div>
+          </ol>
+        </Section>
       )}
     </div>
   );

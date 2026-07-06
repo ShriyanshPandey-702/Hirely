@@ -362,21 +362,10 @@ const handleDrop = (e) => {
     });
   };
 
-  const circumference = 339.29;
-  const score = result?.analysis?.matchScore ?? 0;
-  const scoreOffset = circumference - (score / 100) * circumference;
-
   const cardClass = "card";
   const primaryText = "text-[var(--ink)]";
   const secondaryText = "text-[var(--muted)]";
   const mutedText = "text-[var(--faint)]";
-
-  const scoreVar =
-    score >= 75
-      ? "var(--score-strong)"
-      : score >= 50
-      ? "var(--score-mid)"
-      : "var(--score-low)";
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
@@ -386,25 +375,21 @@ const handleDrop = (e) => {
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 sm:pt-10 sm:pb-24">
 
-        {/* Hero */}
-        <div className="text-center mb-12">
-          <div className="logo-plate mb-5">
-            <img src="/Hirely_lockup.png" alt="Hirely" className="w-[190px] sm:w-[210px]" />
+        {/* Header logo (centered) */}
+        <div className="mb-10 text-center">
+          <div className="logo-plate">
+            <img src="/Hirely_lockup.png" alt="Hirely" className="w-[170px] sm:w-[200px]" />
           </div>
-
-          <p className={`${secondaryText} text-base sm:text-lg max-w-xl mx-auto leading-relaxed`}>
-            Upload a resume and paste a job description to receive an AI-powered candidate match analysis.
-          </p>
         </div>
 
-        {/* Workspace: inputs on the left, results on the right (stacks on mobile) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* New-analysis card */}
+        <div className={`${cardClass} p-6 sm:p-8 mb-8`}>
 
-        {/* ── Left column: inputs ── */}
-        <div>
+        {/* Inputs: résumé + job description side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         {/* Upload */}
-        <div className={`${cardClass} p-6 sm:p-8 mb-6`}>
+        <div className="h-full">
 
           <label
             htmlFor="resume-input"
@@ -412,7 +397,7 @@ const handleDrop = (e) => {
             onDragOver={handleDrag}
             onDragLeave={handleDrag}
             onDrop={handleDrop}
-            className={`flex flex-col items-center justify-center gap-4 w-full border-2 border-dashed rounded-[var(--radius)] p-8 sm:p-10 cursor-pointer transition-colors duration-300 group
+            className={`flex flex-col items-center justify-center gap-4 w-full h-full min-h-[240px] border-2 border-dashed rounded-[var(--radius)] p-8 sm:p-10 cursor-pointer transition-colors duration-300 group
             ${dragActive ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--hairline)] hover:border-[var(--muted)] hover:bg-[var(--surface-2)]"}`}
           >
             <div className="w-14 h-14 rounded-full bg-[var(--surface-2)] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -485,8 +470,8 @@ const handleDrop = (e) => {
 
         </div>
 
-        {/* Job Description */}
-        <div className={`${cardClass} p-6 sm:p-8 mb-6`}>
+        {/* Job description */}
+        <div>
 
           {/* Card header */}
           <div className="flex items-center gap-3 mb-5">
@@ -551,34 +536,22 @@ const handleDrop = (e) => {
           </div>
 
         </div>
-
-        {/* Analyze button — sits below both inputs */}
-        <button
-          onClick={handleUpload}
-          disabled={loading || !selectedFile || !jobDescription.trim()}
-          className="btn-accent w-full py-3.5 px-6 font-semibold text-sm hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 active:translate-y-0 mb-6"
-        >
-          {loading ? "Processing..." : "Analyze Match →"}
-        </button>
+        {/* end job description (cell 2) */}
 
         </div>
-        {/* ── End left column ── */}
+        {/* end inputs grid */}
 
-        {/* ── Right column: results ── */}
-        <div className="lg:sticky lg:top-24 space-y-6">
+          {/* Analyze */}
+          <button
+            onClick={handleUpload}
+            disabled={loading || !selectedFile || !jobDescription.trim()}
+            className="btn-accent w-full mt-6 py-3.5 px-6 font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {loading ? "Processing..." : "Analyze Match →"}
+          </button>
 
-        {/* Empty placeholder (nothing run yet) */}
-        {!loading && !result && (
-          <div className={`${cardClass} p-10 flex flex-col items-center justify-center text-center min-h-[320px]`}>
-            <div className="w-14 h-14 rounded-full bg-[var(--accent-soft)] flex items-center justify-center mb-4">
-              <FiFileText className="w-6 h-6 text-[var(--accent)]" />
-            </div>
-            <p className={`font-display text-lg font-semibold ${primaryText}`}>Your analysis appears here</p>
-            <p className={`text-sm mt-1.5 max-w-xs ${secondaryText}`}>
-              Upload a resume and a job description, then run the match to see the ATS score and recruiter insights.
-            </p>
-          </div>
-        )}
+        </div>
+        {/* end new-analysis card */}
 
         {/* Loading */}
         {loading && (
@@ -634,16 +607,10 @@ const handleDrop = (e) => {
 
         {/* Results */}
         {!loading && result?.success && result.analysis && (
-          <div ref={resultRef}>
+          <div ref={resultRef} className="mt-8">
             <AnalysisResult analysis={result.analysis} />
           </div>
         )}
-
-        </div>
-        {/* ── End right column ── */}
-
-        </div>
-        {/* ── End workspace grid ── */}
 
         <p className={`text-center ${mutedText} text-xs mt-14`}>
           Built with React • Express • Tailwind CSS • Gemini AI

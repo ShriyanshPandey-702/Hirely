@@ -87,6 +87,7 @@ function Profile() {
     try {
       const { data } = await api.put("/auth/profile", form);
       setUser(data.user);
+      window.dispatchEvent(new CustomEvent("user:changed", { detail: data.user }));
       toast.success("Profile updated");
     } catch (error) {
       toast.error(error.response?.data?.message || "Update failed");
@@ -115,6 +116,7 @@ function Profile() {
     try {
       const { data } = await api.post("/auth/avatar", formData);
       setUser(data.user);
+      window.dispatchEvent(new CustomEvent("user:changed", { detail: data.user }));
       toast.success("Profile photo updated");
     } catch (error) {
       toast.error(error.response?.data?.message || "Photo upload failed");
