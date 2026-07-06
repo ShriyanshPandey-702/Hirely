@@ -383,175 +383,178 @@ const handleDrop = (e) => {
         </div>
 
         {/* New-analysis card */}
-        <div className={`${cardClass} p-6 sm:p-8 mb-8`}>
+        {/* ── Section 1 · Résumé ── */}
+        <section className={`${cardClass} p-6 sm:p-8 mb-6`}>
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-center">
 
-        {/* Inputs: résumé + job description side by side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        {/* Upload */}
-        <div className="h-full">
-
-          <label
-            htmlFor="resume-input"
-            onDragEnter={handleDrag}
-            onDragOver={handleDrag}
-            onDragLeave={handleDrag}
-            onDrop={handleDrop}
-            className={`flex flex-col items-center justify-center gap-4 w-full h-full min-h-[240px] border-2 border-dashed rounded-[var(--radius)] p-8 sm:p-10 cursor-pointer transition-colors duration-300 group
-            ${dragActive ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--hairline)] hover:border-[var(--muted)] hover:bg-[var(--surface-2)]"}`}
-          >
-            <div className="w-14 h-14 rounded-full bg-[var(--surface-2)] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <svg
-                className={`w-7 h-7 transition-colors duration-300 ${
-                    dragActive
-                        ? "text-[var(--accent)]"
-                        : "text-[var(--muted)] group-hover:text-[var(--ink)]"
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0-12L8 8m4-4l4 4"
-                />
-              </svg>
+            {/* Left — what this does */}
+            <div>
+              <p className="eyebrow mb-3">Step 1 · Your résumé</p>
+              <h2 className="font-display text-2xl sm:text-3xl font-semibold text-[var(--ink)] mb-3">
+                Add your résumé
+              </h2>
+              <p className={`${secondaryText} leading-relaxed mb-6 max-w-sm`}>
+                Drop a PDF and Hirely reads it against the role — no manual formatting, no
+                guesswork. In seconds you'll get:
+              </p>
+              <ul className="space-y-3">
+                {[
+                  "An ATS match score out of 100",
+                  "Matched and missing skills at a glance",
+                  "Recruiter-grade strengths and suggestions",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-3 text-sm text-[var(--ink)]">
+                    <span className="mt-0.5 w-5 h-5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center flex-shrink-0">
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            {selectedFile ? (
-              <div className="text-center">
-                <p className={`${primaryText} font-medium text-sm break-all`}>{selectedFile.name}</p>
-                <p className="text-[var(--faint)] text-xs mt-1">
-                  {formatFileSize(selectedFile.size)} · Click to change
-                </p>
-              </div>
-            ) : (
-              <div className="text-center">
+            {/* Right — upload */}
+            <div>
+              <p className="eyebrow mb-2">Upload résumé</p>
+              <label
+                htmlFor="resume-input"
+                onDragEnter={handleDrag}
+                onDragOver={handleDrag}
+                onDragLeave={handleDrag}
+                onDrop={handleDrop}
+                className={`flex flex-col items-center justify-center gap-4 w-full min-h-[240px] border-2 border-dashed rounded-[var(--radius)] p-8 sm:p-10 cursor-pointer transition-colors duration-300 group
+                ${dragActive ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--hairline)] hover:border-[var(--muted)] hover:bg-[var(--surface-2)]"}`}
+              >
+                <div className="w-14 h-14 rounded-full bg-[var(--surface-2)] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <svg
+                    className={`w-7 h-7 transition-colors duration-300 ${
+                        dragActive
+                            ? "text-[var(--accent)]"
+                            : "text-[var(--muted)] group-hover:text-[var(--ink)]"
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0-12L8 8m4-4l4 4"
+                    />
+                  </svg>
+                </div>
 
-                {dragActive ? (
-                  <>
-                    <p className="text-lg font-semibold text-[var(--accent)]">
-                      Drag &amp; drop your resume
+                {selectedFile ? (
+                  <div className="text-center">
+                    <p className={`${primaryText} font-medium text-sm break-all`}>{selectedFile.name}</p>
+                    <p className="text-[var(--faint)] text-xs mt-1">
+                      {formatFileSize(selectedFile.size)} · Click to change
                     </p>
-
-                    <p className="text-sm text-[var(--muted)] mt-2">
-                      Release to upload
-                    </p>
-                  </>
+                  </div>
                 ) : (
-                  <>
-                    <p className={`${secondaryText} text-sm`}>
-                      Drop your resume here
-                    </p>
-
-                    <p className={`${primaryText} text-sm mt-2`}>
-                      or Click to Upload
-                    </p>
-
-                    <p className="text-[var(--muted)] text-xs mt-3">
-                      Supports PDF, DOC, DOCX
-                    </p>
-                  </>
+                  <div className="text-center">
+                    {dragActive ? (
+                      <>
+                        <p className="text-lg font-semibold text-[var(--accent)]">Drag &amp; drop your résumé</p>
+                        <p className="text-sm text-[var(--muted)] mt-2">Release to upload</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className={`${primaryText} text-sm font-medium`}>Drop your résumé here, or click to browse</p>
+                        <p className="text-[var(--muted)] text-xs mt-2">PDF, DOC or DOCX</p>
+                      </>
+                    )}
+                  </div>
                 )}
 
-              </div>
-            )}
-
-            <input
-              id="resume-input"
-              type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </label>
-
-        </div>
-
-        {/* Job description */}
-        <div>
-
-          {/* Card header */}
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+                <input
+                  id="resume-input"
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </label>
             </div>
+
+          </div>
+        </section>
+
+        {/* ── Section 2 · Job description ── */}
+        <section className={`${cardClass} p-6 sm:p-8 mb-6`}>
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-start">
+
+            {/* Left — what to paste + template */}
             <div>
-              <h2 className={`text-sm font-semibold tracking-wide ${primaryText}`}>Job Description</h2>
-              <p className={`text-xs mt-0.5 ${secondaryText}`}>Paste the complete job description for comparison.</p>
+              <p className="eyebrow mb-3">Step 2 · The job</p>
+              <h2 className="font-display text-2xl sm:text-3xl font-semibold text-[var(--ink)] mb-3">
+                Paste the job description
+              </h2>
+              <p className={`${secondaryText} leading-relaxed mb-6 max-w-sm`}>
+                Add the full posting — required skills, responsibilities and qualifications.
+                The more detail you include, the sharper the match. In a hurry? Start from a
+                ready-made template.
+              </p>
+              <label className="block eyebrow mb-2">Start from a template</label>
+              <select
+                value={selectedTemplate}
+                onChange={(e) => {
+                  setSelectedTemplate(e.target.value);
+                  if (e.target.value) {
+                    setJobDescription(jobTemplates[e.target.value] || "");
+                  }
+                }}
+                className="w-full rounded-[var(--radius)] px-4 py-3 outline-none transition-colors duration-200 bg-[var(--surface-2)] border border-[var(--hairline)] text-[var(--ink)] focus:border-[var(--accent)]"
+              >
+                <option value="">Choose a job template</option>
+                <option value="frontend">Frontend Developer</option>
+                <option value="backend">Backend Developer</option>
+                <option value="java">Java Full Stack</option>
+                <option value="react">React Developer</option>
+                <option value="python">Python Developer</option>
+                <option value="dataScience">Data Scientist</option>
+                <option value="mern">MERN Stack</option>
+                <option value="devops">DevOps Engineer</option>
+                <option value="aiEngineer">AI Engineer</option>
+              </select>
             </div>
+
+            {/* Right — the text */}
+            <div>
+              <div className="flex items-baseline justify-between mb-2">
+                <label htmlFor="jd-input" className="eyebrow">Job description</label>
+                <span className={`text-[11px] ${mutedText} tabular-nums`}>
+                  {jobDescription.length.toLocaleString()} / 10,000
+                </span>
+              </div>
+              <textarea
+                id="jd-input"
+                value={jobDescription}
+                onChange={(e) => {
+                  setJobDescription(e.target.value);
+                  setSelectedTemplate("");
+                }}
+                placeholder="Paste the full job description here — required skills, responsibilities, qualifications, tools, and experience level..."
+                rows={13}
+                maxLength={10000}
+                className="w-full resize-none rounded-[var(--radius)] px-4 py-3.5 outline-none transition-colors duration-200 bg-[var(--surface-2)] border border-[var(--hairline)] text-[var(--ink)] placeholder-[var(--faint)] focus:border-[var(--accent)]"
+              />
+            </div>
+
           </div>
+        </section>
 
-          {/* Template Dropdown */}
-          <div className="mb-5">
-            <label className={`block text-xs font-medium ${secondaryText} mb-2`}>
-              Select Template
-            </label>
-
-            <select
-              value={selectedTemplate}
-              onChange={(e) => {
-                setSelectedTemplate(e.target.value);
-
-                if (e.target.value) {
-                  setJobDescription(jobTemplates[e.target.value] || "");
-                }
-              }}
-              className="w-full rounded-[var(--radius)] px-4 py-3 outline-none transition-colors duration-200 bg-[var(--surface-2)] border border-[var(--hairline)] text-[var(--ink)] focus:border-[var(--accent)]"
-            >
-              <option value="">Choose a Job Template</option>
-              <option value="frontend">Frontend Developer</option>
-              <option value="backend">Backend Developer</option>
-              <option value="java">Java Full Stack</option>
-              <option value="react">React Developer</option>
-              <option value="python">Python Developer</option>
-              <option value="dataScience">Data Scientist</option>
-              <option value="mern">MERN Stack</option>
-              <option value="devops">DevOps Engineer</option>
-              <option value="aiEngineer">AI Engineer</option>
-            </select>
-          </div>
-
-          {/* Textarea wrapper */}
-          <div className="relative group">
-            <textarea
-              value={jobDescription}
-              onChange={(e) => {
-                setJobDescription(e.target.value);
-                setSelectedTemplate("");
-              }}
-              placeholder="Paste the full job description here — required skills, responsibilities, qualifications..."
-              rows={8}
-              maxLength={5000}
-              className="w-full resize-none rounded-[var(--radius)] px-4 py-3.5 outline-none transition-colors duration-200 bg-[var(--surface-2)] border border-[var(--hairline)] text-[var(--ink)] placeholder-[var(--faint)] focus:border-[var(--accent)]"
-            />
-            {/* Character counter */}
-            <span className={`absolute bottom-3 right-3.5 text-[11px] ${mutedText} pointer-events-none select-none tabular-nums`}>
-              {jobDescription.length} / 5000
-            </span>
-          </div>
-
-        </div>
-        {/* end job description (cell 2) */}
-
-        </div>
-        {/* end inputs grid */}
-
-          {/* Analyze */}
-          <button
-            onClick={handleUpload}
-            disabled={loading || !selectedFile || !jobDescription.trim()}
-            className="btn-accent w-full mt-6 py-3.5 px-6 font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {loading ? "Processing..." : "Analyze Match →"}
-          </button>
-
-        </div>
-        {/* end new-analysis card */}
+        {/* Analyze */}
+        <button
+          onClick={handleUpload}
+          disabled={loading || !selectedFile || !jobDescription.trim()}
+          className="btn-accent w-full mb-8 py-4 px-6 font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {loading ? "Processing..." : "Analyze Match →"}
+        </button>
 
         {/* Loading */}
         {loading && (
