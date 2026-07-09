@@ -2,11 +2,7 @@
 
 # Hirely --- AI-Powered ATS Resume Analyzer & Resume Comparison Platform
 
-An end-to-end AI-powered web application that helps job seekers optimize
-their resumes using **Google Gemini AI**. Hirely analyzes resumes
-against job descriptions, provides ATS compatibility scores, recruiter
-insights, skill-gap analysis, downloadable reports, and includes a
-powerful **Resume vs Resume Comparison** engine.
+An end-to-end AI-powered web application that helps job seekers and recruiters optimize their resumes using **Google Gemini AI**. Hirely analyzes resumes against job descriptions, provides ATS compatibility scores, recruiter insights, skill-gap analysis, downloadable reports, and includes a powerful **Resume vs Resume Comparison** engine.
 
 
 ------------------------------------------------------------------------
