@@ -308,6 +308,12 @@ const uploadAvatar = async (req, res) => {
       });
     }
 
+    if (!cloudinary.isConfigured) {
+      return res.status(503).json({
+        message: "Photo uploads are not configured on the server. Please try again later.",
+      });
+    }
+
     const user = await User.findById(req.user.id);
 
     if (!user) {

@@ -312,37 +312,37 @@ Optimized for:
 
 ## Login Page
 
-<img src="./screenshots/login.png" width="900"/>
+
 
 ---
 
 ## Sign Up Page
 
-<img src="./screenshots/signup.png" width="900"/>
+
 
 ---
 
 ## Dashboard
 
-<img src="./screenshots/dashboard.png" width="900"/>
+
 
 ---
 
 ## AI Analysis Result (Top)
 
-<img src="./screenshots/analysis1.png" width="900"/>
+
 
 ---
 
 ## AI Analysis Result (Bottom)
 
-<img src="./screenshots/analysis2.png" width="900"/>
+
 
 ---
 
 ## Analysis History
 
-<img src="./screenshots/history.png" width="900"/>
+
 
 ---
 
