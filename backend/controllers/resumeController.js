@@ -1,4 +1,5 @@
 const { analyzeResume } = require("../services/resumeService");
+const { getAuth } = require("@clerk/express");
 const Analysis = require("../models/Analysis");
 
 const getResume = async (req, res) => {
@@ -28,7 +29,7 @@ const getResume = async (req, res) => {
 
         // Save analysis to MongoDB (scoped to the authenticated user)
         await Analysis.create({
-            user: req.user.id,
+            user: getAuth(req).userId,
             jobTitle: jobTitle || "Custom Job Description",
             jobDescription,
             fileName: req.file.originalname,
@@ -76,7 +77,7 @@ const getResume = async (req, res) => {
 // Get the authenticated user's analysis history (most recent first)
 const getHistory = async (req, res) => {
     try {
-        const history = await Analysis.find({ user: req.user.id }).sort({
+        const history = await Analysis.find({ user: getAuth(req).userId }).sort({
             createdAt: -1,
         });
 
@@ -98,7 +99,7 @@ const deleteHistoryItem = async (req, res) => {
     try {
         const deleted = await Analysis.findOneAndDelete({
             _id: req.params.id,
-            user: req.user.id,
+            user: getAuth(req).userId,
         });
 
         if (!deleted) {
@@ -124,7 +125,7 @@ const deleteHistoryItem = async (req, res) => {
 // Clear all analyses for the authenticated user
 const clearHistory = async (req, res) => {
     try {
-        await Analysis.deleteMany({ user: req.user.id });
+        await Analysis.deleteMany({ user: getAuth(req).userId });
 
         res.json({
             success: true,

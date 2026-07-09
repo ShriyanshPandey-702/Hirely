@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useUser, useClerk } from "@clerk/clerk-react";
 import { useTheme } from "../context/ThemeContext";
-import api from "../utils/api";
 import ConfirmationModal from "./ConfirmationModal";
 import {
   FiSun,
@@ -25,37 +25,13 @@ const links = [
 function Navbar() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    let active = true;
-    api
-      .get("/auth/me")
-      .then((r) => active && setUser(r.data.user))
-      .catch(() => {});
-
-    // Live-update when the profile page changes the photo / name
-    const onUserChanged = (e) => setUser(e.detail);
-    window.addEventListener("user:changed", onUserChanged);
-
-    return () => {
-      active = false;
-      window.removeEventListener("user:changed", onUserChanged);
-    };
-  }, []);
-
-  const initials = (user?.name || "?")
-    .split(" ")
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
 
   const doLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/");
+    signOut(() => navigate("/"));
   };
 
   const linkBase =
@@ -121,12 +97,10 @@ function Navbar() {
                   }`
                 }
               >
-                {user?.avatar ? (
-                  <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                {user?.imageUrl ? (
+                  <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-xs font-bold text-[var(--accent)] bg-[var(--accent-soft)] w-full h-full flex items-center justify-center">
-                    {initials}
-                  </span>
+                  <span className="w-full h-full bg-[var(--accent-soft)]" />
                 )}
               </NavLink>
 

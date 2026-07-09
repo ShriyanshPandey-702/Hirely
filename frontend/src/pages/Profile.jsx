@@ -1,9 +1,20 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "react-toastify";
+import { useUser, useClerk } from "@clerk/clerk-react";
 import { useTheme } from "../context/ThemeContext";
 import Navbar from "../components/navbar";
 import api from "../utils/api";
-import { FiUser, FiMail, FiCalendar, FiSave, FiFileText, FiTrendingUp, FiAward, FiTarget, FiCamera } from "react-icons/fi";
+import {
+  FiUser,
+  FiSave,
+  FiCamera,
+  FiCalendar,
+  FiSettings,
+  FiFileText,
+  FiTrendingUp,
+  FiAward,
+  FiTarget,
+} from "react-icons/fi";
 
 function StatCard({ icon: Icon, label, value, cardClass, secondaryText, primaryText }) {
   return (
@@ -21,76 +32,61 @@ function StatCard({ icon: Icon, label, value, cardClass, secondaryText, primaryT
 
 function Profile() {
   const { theme } = useTheme();
+  const { user, isLoaded } = useUser();
+  const { openUserProfile } = useClerk();
 
-  const [user, setUser] = useState(null);
   const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef(null);
-  const [form, setForm] = useState({ name: "", email: "" });
+  const [name, setName] = useState("");
 
   const cardClass = "card";
   const primaryText = "text-[var(--ink)]";
   const secondaryText = "text-[var(--muted)]";
-
   const inputClass =
     "w-full rounded-[var(--radius)] pl-10 pr-4 py-3 outline-none transition-colors duration-200 border bg-[var(--surface-2)] border-[var(--hairline)] text-[var(--ink)] placeholder-[var(--faint)] focus:border-[var(--accent)]";
 
   useEffect(() => {
-    (async () => {
-      try {
-        const [me, hist] = await Promise.all([
-          api.get("/auth/me"),
-          api.get("/resume/history"),
-        ]);
-        setUser(me.data.user);
-        setForm({ name: me.data.user.name, email: me.data.user.email });
-        setHistory(hist.data.history || []);
-      } catch {
-        toast.error("Failed to load profile");
-      } finally {
-        setLoading(false);
-      }
-    })();
+    if (user) setName(user.fullName || "");
+  }, [user]);
+
+  useEffect(() => {
+    api
+      .get("/resume/history")
+      .then((r) => setHistory(r.data.history || []))
+      .catch(() => {});
   }, []);
 
   const stats = useMemo(() => {
-    if (history.length === 0) {
-      return { total: 0, avg: 0, best: 0, topRole: "—" };
-    }
+    if (history.length === 0) return { total: 0, avg: 0, best: 0, topRole: "—" };
     const total = history.length;
     const avg = Math.round(history.reduce((s, i) => s + i.matchScore, 0) / total);
     const best = Math.max(...history.map((i) => i.matchScore));
     const counts = {};
-    history.forEach((i) => {
-      counts[i.jobTitle] = (counts[i.jobTitle] || 0) + 1;
-    });
+    history.forEach((i) => (counts[i.jobTitle] = (counts[i.jobTitle] || 0) + 1));
     const topRole = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
     return { total, avg, best, topRole };
   }, [history]);
 
-  const initials = (user?.name || "?")
-    .split(" ")
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const email = user?.primaryEmailAddress?.emailAddress || "";
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) {
+    if (!name.trim()) {
       toast.error("Name cannot be empty");
       return;
     }
     setSaving(true);
     try {
-      const { data } = await api.put("/auth/profile", form);
-      setUser(data.user);
-      window.dispatchEvent(new CustomEvent("user:changed", { detail: data.user }));
+      const parts = name.trim().split(/\s+/);
+      await user.update({
+        firstName: parts[0] || "",
+        lastName: parts.slice(1).join(" "),
+      });
       toast.success("Profile updated");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Update failed");
+      toast.error(error?.errors?.[0]?.message || "Update failed");
     } finally {
       setSaving(false);
     }
@@ -99,7 +95,6 @@ function Profile() {
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
@@ -108,18 +103,13 @@ function Profile() {
       toast.error("Image must be under 8 MB");
       return;
     }
-
-    const formData = new FormData();
-    formData.append("avatar", file);
-
     setUploadingAvatar(true);
     try {
-      const { data } = await api.post("/auth/avatar", formData);
-      setUser(data.user);
-      window.dispatchEvent(new CustomEvent("user:changed", { detail: data.user }));
+      await user.setProfileImage({ file });
+      await user.reload();
       toast.success("Profile photo updated");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Photo upload failed");
+      toast.error(error?.errors?.[0]?.message || "Photo upload failed");
     } finally {
       setUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -132,10 +122,12 @@ function Profile() {
         <Navbar />
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-          <h1 className={`font-display text-2xl sm:text-3xl font-semibold tracking-tight mb-6 ${primaryText}`}>Profile</h1>
+          <h1 className={`font-display text-2xl sm:text-3xl font-semibold tracking-tight mb-6 ${primaryText}`}>
+            Profile
+          </h1>
 
-          {loading ? (
-            <div className={`rounded-2xl ${cardClass} p-16 flex flex-col items-center gap-4`}>
+          {!isLoaded ? (
+            <div className={`${cardClass} p-16 flex flex-col items-center gap-4`}>
               <div className="relative w-10 h-10">
                 <div className="absolute inset-0 rounded-full border-2 border-[var(--hairline)]" />
                 <div className="absolute inset-0 rounded-full border-2 border-t-[var(--accent)] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
@@ -145,18 +137,16 @@ function Profile() {
           ) : (
             <>
               {/* Identity card */}
-              <div className={`${cardClass} p-6 mb-6 flex items-center gap-5`}>
+              <div className={`${cardClass} p-6 mb-6 flex flex-wrap items-center gap-5`}>
                 <div className="relative flex-shrink-0">
-                  {user?.avatar ? (
+                  {user?.imageUrl ? (
                     <img
-                      src={user.avatar}
-                      alt={user?.name || "Avatar"}
-                      className="w-16 h-16 rounded-2xl object-cover"
+                      src={user.imageUrl}
+                      alt={user?.fullName || "Avatar"}
+                      className="w-16 h-16 rounded-[var(--radius)] object-cover"
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-[var(--radius)] bg-[var(--accent)] flex items-center justify-center text-[var(--accent-ink)] text-xl font-bold font-display">
-                      {initials}
-                    </div>
+                    <div className="w-16 h-16 rounded-[var(--radius)] bg-[var(--accent-soft)]" />
                   )}
 
                   <input
@@ -179,58 +169,70 @@ function Profile() {
                     )}
                   </label>
                 </div>
-                <div className="min-w-0">
-                  <p className={`text-xl font-bold truncate ${primaryText}`}>{user?.name}</p>
-                  <p className={`text-sm truncate ${secondaryText}`}>{user?.email}</p>
+
+                <div className="min-w-0 flex-1">
+                  <p className={`text-xl font-bold truncate ${primaryText}`}>{user?.fullName || "Your name"}</p>
+                  <p className={`text-sm truncate ${secondaryText}`}>{email}</p>
                   {user?.createdAt && (
                     <p className="text-xs text-[var(--faint)] mt-1 flex items-center gap-1.5">
                       <FiCalendar className="w-3 h-3" />
-                      Joined {new Date(user.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}
+                      Joined{" "}
+                      {new Date(user.createdAt).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
                     </p>
                   )}
                 </div>
+
+                <button
+                  onClick={() => openUserProfile()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-[var(--radius)] text-sm font-medium border border-[var(--hairline)] bg-[var(--surface-2)] text-[var(--ink)] hover:border-[var(--accent)] transition-colors"
+                >
+                  <FiSettings className="w-4 h-4" /> Manage account
+                </button>
               </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                <StatCard icon={FiFileText} label="Analyses" value={stats.total} cardClass={cardClass} secondaryText={secondaryText} primaryText={primaryText} />
-                <StatCard icon={FiTrendingUp} label="Avg Score" value={`${stats.avg}%`} cardClass={cardClass} secondaryText={secondaryText} primaryText={primaryText} />
-                <StatCard icon={FiAward} label="Best Score" value={`${stats.best}%`} cardClass={cardClass} secondaryText={secondaryText} primaryText={primaryText} />
-                <StatCard icon={FiTarget} label="Top Role" value={stats.topRole} cardClass={cardClass} secondaryText={secondaryText} primaryText={primaryText} />
-              </div>
+              <div className="grid lg:grid-cols-2 gap-6 items-start">
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-3">
+                  <StatCard icon={FiFileText} label="Analyses" value={stats.total} cardClass={cardClass} secondaryText={secondaryText} primaryText={primaryText} />
+                  <StatCard icon={FiTrendingUp} label="Avg Score" value={`${stats.avg}%`} cardClass={cardClass} secondaryText={secondaryText} primaryText={primaryText} />
+                  <StatCard icon={FiAward} label="Best Score" value={`${stats.best}%`} cardClass={cardClass} secondaryText={secondaryText} primaryText={primaryText} />
+                  <StatCard icon={FiTarget} label="Top Role" value={stats.topRole} cardClass={cardClass} secondaryText={secondaryText} primaryText={primaryText} />
+                </div>
 
-              {/* Edit form */}
-              <div className={`${cardClass} p-6`}>
-                <h2 className={`text-sm font-semibold uppercase tracking-wider mb-5 ${secondaryText}`}>Edit Details</h2>
-                <form onSubmit={handleSave} className="space-y-4">
-                  <div className="relative">
-                    <FiUser className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${secondaryText}`} />
-                    <input
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      placeholder="Full name"
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className="relative">
-                    <FiMail className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${secondaryText}`} />
-                    <input
-                      type="email"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      placeholder="Email address"
-                      className={inputClass}
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="btn-accent flex items-center justify-center gap-2 w-full py-3 px-6 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <FiSave />
-                    {saving ? "Saving…" : "Save Changes"}
-                  </button>
-                </form>
+                {/* Edit name */}
+                <div className={`${cardClass} p-6`}>
+                  <h2 className={`text-sm font-semibold uppercase tracking-wider mb-1 ${secondaryText}`}>Display name</h2>
+                  <p className={`text-xs mb-5 ${secondaryText}`}>
+                    Change your name here. Email, password and connected accounts live under{" "}
+                    <button onClick={() => openUserProfile()} className="text-[var(--accent)] hover:underline">
+                      Manage account
+                    </button>
+                    .
+                  </p>
+                  <form onSubmit={handleSave} className="space-y-4">
+                    <div className="relative">
+                      <FiUser className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${secondaryText}`} />
+                      <input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Full name"
+                        className={inputClass}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="btn-accent flex items-center justify-center gap-2 w-full py-3 px-6 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FiSave />
+                      {saving ? "Saving…" : "Save Changes"}
+                    </button>
+                  </form>
+                </div>
               </div>
             </>
           )}

@@ -321,47 +321,6 @@ const handleDrop = (e) => {
 
   };
 
-  const handleLogout = () => {
-    openModal({
-      title: "Confirm Logout",
-      description: "Are you sure you want to log out? You will need to sign in again to access your analysis history.",
-      confirmText: "Logout",
-      isDestructive: true,
-      onConfirm: () => {
-        localStorage.removeItem("token");
-        navigate("/");
-      }
-    });
-  };
-
-  const confirmDeleteAccount = () => {
-    openModal({
-      title: "Delete Account",
-      description: "This action will permanently delete your account and all associated data. This action cannot be undone.",
-      confirmText: "Delete Account",
-      isDestructive: true,
-      onConfirm: async () => {
-        try {
-          await api.delete("/auth/delete-account");
-
-          localStorage.removeItem("token");
-          toast.success("Account deleted successfully");
-          navigate("/");
-        } catch (error) {
-          if (error.response?.status === 401) {
-            toast.error("Session expired. Please log in again.");
-          } else if (error.response?.status >= 500) {
-            toast.error("Server error. Please try again later.");
-          } else if (error.request) {
-            toast.error("Network error. Check your connection.");
-          } else {
-            toast.error(error.response?.data?.message || "Failed to delete account");
-          }
-        }
-      }
-    });
-  };
-
   const cardClass = "card";
   const primaryText = "text-[var(--ink)]";
   const secondaryText = "text-[var(--muted)]";

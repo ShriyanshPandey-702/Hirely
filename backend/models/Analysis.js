@@ -2,9 +2,9 @@ const mongoose = require("mongoose");
 
 const analysisSchema = new mongoose.Schema(
   {
+    // Clerk user id (e.g. "user_2ab...")
     user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: true,
       index: true,
     },

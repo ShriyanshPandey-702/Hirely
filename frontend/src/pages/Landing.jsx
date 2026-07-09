@@ -1,4 +1,5 @@
 import { Link, useNavigate, Navigate } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
 import { useTheme } from "../context/ThemeContext";
 import {
   FiSun,
@@ -42,7 +43,8 @@ const steps = [
 function Landing() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const isAuthed = !!localStorage.getItem("token");
+  const { isSignedIn } = useAuth();
+  const isAuthed = !!isSignedIn;
 
   // Signed-in users skip the marketing page and go straight to the dashboard
   if (isAuthed) {
@@ -77,12 +79,12 @@ function Landing() {
             ) : (
               <>
                 <Link
-                  to="/login"
+                  to="/sign-in"
                   className="px-4 py-2 rounded-[var(--radius)] text-sm font-semibold border border-[var(--hairline)] text-[var(--ink)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)] hover:-translate-y-0.5 transition-all duration-200"
                 >
                   Log in
                 </Link>
-                <Link to="/signup" className="btn-accent px-4 py-2 text-sm font-semibold hidden sm:inline-flex">
+                <Link to="/sign-up" className="btn-accent px-4 py-2 text-sm font-semibold hidden sm:inline-flex">
                   Sign up
                 </Link>
               </>
@@ -120,13 +122,13 @@ function Landing() {
           ) : (
             <>
               <button
-                onClick={() => navigate("/signup")}
+                onClick={() => navigate("/sign-up")}
                 className="btn-accent px-7 py-3.5 font-semibold text-sm inline-flex items-center gap-2 w-full sm:w-auto justify-center"
               >
                 Get started free <FiArrowRight />
               </button>
               <button
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/sign-in")}
                 className="px-7 py-3.5 rounded-[var(--radius)] font-semibold text-sm border border-[var(--hairline)] text-[var(--ink)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)] hover:-translate-y-0.5 transition-all duration-200 w-full sm:w-auto"
               >
                 Log in
@@ -182,7 +184,7 @@ function Landing() {
             Create a free account and run your first resume analysis in under a minute.
           </p>
           <button
-            onClick={() => navigate(isAuthed ? "/dashboard" : "/signup")}
+            onClick={() => navigate(isAuthed ? "/dashboard" : "/sign-up")}
             className="btn-accent px-8 py-3.5 font-semibold text-sm inline-flex items-center gap-2"
           >
             {isAuthed ? "Go to Dashboard" : "Get started free"} <FiArrowRight />

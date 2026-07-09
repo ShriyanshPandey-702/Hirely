@@ -9,23 +9,26 @@ const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
 });
 
-// Attach the JWT to every request if we have one.
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Attach the Clerk session token to every request.
+api.interceptors.request.use(async (config) => {
+  try {
+    const token = await window.Clerk?.session?.getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch {
+    /* not signed in yet — request goes out unauthenticated */
   }
   return config;
 });
 
-// If the token is invalid/expired, clear it and bounce to login.
+// If the session is invalid/expired, send the user to sign in.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+      if (window.location.pathname !== "/sign-in") {
+        window.location.href = "/sign-in";
       }
     }
     return Promise.reject(error);

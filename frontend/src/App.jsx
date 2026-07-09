@@ -1,9 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+import SignInPage from "./pages/SignInPage";
+import SignUpPage from "./pages/SignUpPage";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
 import Profile from "./pages/Profile";
@@ -13,13 +11,12 @@ import ProtectedRoute from "./components/ProtectedRoute";
 function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password/:token" element={<ResetPassword />} />
-
       {/* Public landing page — first thing visitors see */}
       <Route path="/" element={<Landing />} />
+
+      {/* Clerk auth (email/password + Google + GitHub) */}
+      <Route path="/sign-in/*" element={<SignInPage />} />
+      <Route path="/sign-up/*" element={<SignUpPage />} />
 
       <Route
         path="/dashboard"

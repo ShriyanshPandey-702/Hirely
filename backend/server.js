@@ -2,10 +2,10 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const { clerkMiddleware } = require("@clerk/express");
 const connectDB = require("./config/db");
 
 const resumeRoutes = require("./routes/resumeRoutes");
-const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
@@ -21,8 +21,11 @@ app.use(
   })
 );  //This allows your React app (localhost:5173) to talk to your backend.
 app.use(express.json());  //Express automatically converts the JSON into a JavaScript object.
+
+// Clerk — attaches auth to every request (verifies the session token)
+app.use(clerkMiddleware());
+
 app.use("/api/resume", resumeRoutes);
-app.use("/api/auth", authRoutes);
 
 
 app.get("/", (req, res) => {

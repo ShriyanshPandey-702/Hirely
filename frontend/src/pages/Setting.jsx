@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useUser, useClerk } from "@clerk/clerk-react";
 import { useTheme } from "../context/ThemeContext";
 import Navbar from "../components/navbar";
 import ConfirmationModal from "../components/ConfirmationModal";
 import api from "../utils/api";
-import { FiSun, FiMoon, FiLock, FiEye, FiEyeOff, FiTrash2, FiUserX } from "react-icons/fi";
+import { FiSun, FiMoon, FiTrash2, FiUserX, FiShield } from "react-icons/fi";
 
 function Section({ title, cardClass, secondaryText, children }) {
   return (
@@ -18,47 +19,18 @@ function Section({ title, cardClass, secondaryText, children }) {
 
 function Settings() {
   const { theme, toggleTheme } = useTheme();
+  const { user } = useUser();
+  const { openUserProfile } = useClerk();
   const navigate = useNavigate();
 
-  const [pw, setPw] = useState({ currentPassword: "", newPassword: "", confirm: "" });
-  const [showPw, setShowPw] = useState(false);
-  const [changing, setChanging] = useState(false);
   const [modal, setModal] = useState({ isOpen: false, title: "", description: "", confirmText: "", onConfirm: () => {} });
 
   const cardClass = "card";
   const primaryText = "text-[var(--ink)]";
   const secondaryText = "text-[var(--muted)]";
 
-  const inputClass =
-    "w-full rounded-[var(--radius)] px-4 py-3 outline-none transition-colors duration-200 border bg-[var(--surface-2)] border-[var(--hairline)] text-[var(--ink)] placeholder-[var(--faint)] focus:border-[var(--accent)]";
-
   const openModal = (config) => setModal({ ...config, isOpen: true });
   const closeModal = () => setModal((m) => ({ ...m, isOpen: false }));
-
-  const changePassword = async (e) => {
-    e.preventDefault();
-    if (pw.newPassword.length < 6) {
-      toast.error("New password must be at least 6 characters");
-      return;
-    }
-    if (pw.newPassword !== pw.confirm) {
-      toast.error("Passwords do not match");
-      return;
-    }
-    setChanging(true);
-    try {
-      await api.put("/auth/change-password", {
-        currentPassword: pw.currentPassword,
-        newPassword: pw.newPassword,
-      });
-      toast.success("Password changed successfully");
-      setPw({ currentPassword: "", newPassword: "", confirm: "" });
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to change password");
-    } finally {
-      setChanging(false);
-    }
-  };
 
   const clearHistory = () => {
     openModal({
@@ -83,12 +55,12 @@ function Settings() {
       confirmText: "Delete Account",
       onConfirm: async () => {
         try {
-          await api.delete("/auth/delete-account");
-          localStorage.removeItem("token");
-          toast.success("Account deleted successfully");
+          await api.delete("/resume/history").catch(() => {});
+          await user.delete();
+          toast.success("Account deleted");
           navigate("/");
-        } catch (error) {
-          toast.error(error.response?.data?.message || "Failed to delete account");
+        } catch {
+          toast.error("Failed to delete account");
         }
       },
     });
@@ -119,51 +91,20 @@ function Settings() {
             </div>
           </Section>
 
-          {/* Security */}
-          <Section title="Security" cardClass={cardClass} secondaryText={secondaryText}>
-            <form onSubmit={changePassword} className="space-y-4">
-              <div className="relative">
-                <input
-                  type={showPw ? "text" : "password"}
-                  value={pw.currentPassword}
-                  onChange={(e) => setPw({ ...pw, currentPassword: e.target.value })}
-                  placeholder="Current password"
-                  className={`pr-12 ${inputClass}`}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPw((v) => !v)}
-                  className={`absolute right-4 top-1/2 -translate-y-1/2 ${secondaryText} hover:opacity-80`}
-                >
-                  {showPw ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                </button>
+          {/* Account & Security (Clerk) */}
+          <Section title="Account & Security" cardClass={cardClass} secondaryText={secondaryText}>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <p className={`font-medium ${primaryText}`}>Email, password & sign-in methods</p>
+                <p className={`text-sm ${secondaryText}`}>Manage your email, password, and connected Google / GitHub accounts.</p>
               </div>
-              <input
-                type={showPw ? "text" : "password"}
-                value={pw.newPassword}
-                onChange={(e) => setPw({ ...pw, newPassword: e.target.value })}
-                placeholder="New password"
-                className={inputClass}
-                required
-              />
-              <input
-                type={showPw ? "text" : "password"}
-                value={pw.confirm}
-                onChange={(e) => setPw({ ...pw, confirm: e.target.value })}
-                placeholder="Confirm new password"
-                className={inputClass}
-                required
-              />
               <button
-                type="submit"
-                disabled={changing}
-                className="btn-accent flex items-center justify-center gap-2 w-full py-3 px-6 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => openUserProfile()}
+                className="flex items-center gap-2 px-4 py-2 rounded-[var(--radius)] text-sm font-medium border border-[var(--hairline)] bg-[var(--surface-2)] text-[var(--ink)] hover:border-[var(--accent)] transition-colors"
               >
-                <FiLock />
-                {changing ? "Updating…" : "Change Password"}
+                <FiShield /> Manage account
               </button>
-            </form>
+            </div>
           </Section>
 
           {/* Danger zone */}
