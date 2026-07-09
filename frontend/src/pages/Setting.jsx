@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useUser, useClerk, useReverification } from "@clerk/clerk-react";
 import { useTheme } from "../context/ThemeContext";
 import Navbar from "../components/navbar";
 import ConfirmationModal from "../components/ConfirmationModal";
@@ -22,6 +22,10 @@ function Settings() {
   const { user } = useUser();
   const { openUserProfile } = useClerk();
   const navigate = useNavigate();
+
+  // Deleting an account is a sensitive op — Clerk requires step-up (re)verification.
+  // useReverification shows that prompt automatically, then runs the delete.
+  const deleteUser = useReverification(() => user.delete());
 
   const [modal, setModal] = useState({ isOpen: false, title: "", description: "", confirmText: "", onConfirm: () => {} });
 
@@ -55,16 +59,21 @@ function Settings() {
       confirmText: "Delete Account",
       onConfirm: async () => {
         try {
+          // Clear our own data first (session still valid), then delete the Clerk user
+          // (the Clerk webhook also cleans up analyses on user.deleted).
           await api.delete("/resume/history").catch(() => {});
-          await user.delete();
+          await deleteUser();
           toast.success("Account deleted");
           navigate("/");
         } catch (error) {
-          toast.error(
-            error?.errors?.[0]?.longMessage ||
-              error?.errors?.[0]?.message ||
-              "Failed to delete account. Enable self-service deletion in Clerk."
-          );
+          // User cancelling the verification also lands here — keep it quiet-ish
+          if (error?.message !== "reverification-cancelled") {
+            toast.error(
+              error?.errors?.[0]?.longMessage ||
+                error?.errors?.[0]?.message ||
+                "Failed to delete account"
+            );
+          }
         }
       },
     });
