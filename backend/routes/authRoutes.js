@@ -30,12 +30,21 @@ router.put("/profile", authMiddleware, updateProfile);
 
 router.put("/change-password", authMiddleware, changePassword);
 
-router.post(
-  "/avatar",
-  authMiddleware,
-  avatarUpload.single("avatar"),
-  uploadAvatar
-);
+// Wrap multer so file-size / file-type errors return a clear JSON message
+const handleAvatarUpload = (req, res, next) => {
+  avatarUpload.single("avatar")(req, res, (err) => {
+    if (err) {
+      const message =
+        err.code === "LIMIT_FILE_SIZE"
+          ? "Image is too large. Please use an image under 8 MB."
+          : err.message || "Could not read the uploaded image.";
+      return res.status(400).json({ message });
+    }
+    next();
+  });
+};
+
+router.post("/avatar", authMiddleware, handleAvatarUpload, uploadAvatar);
 
 router.delete("/delete-account", authMiddleware, deleteAccount);
 

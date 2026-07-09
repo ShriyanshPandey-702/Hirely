@@ -19,7 +19,7 @@ const fileFilter = (req, file, cb) => {
 const avatarUpload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 3 * 1024 * 1024 }, // 3 MB
+  limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB (Cloudinary downsizes anyway)
 });
 
 module.exports = avatarUpload;

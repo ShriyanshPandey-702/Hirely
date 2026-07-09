@@ -104,8 +104,8 @@ function Profile() {
       toast.error("Please select an image file");
       return;
     }
-    if (file.size > 3 * 1024 * 1024) {
-      toast.error("Image must be under 3 MB");
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Image must be under 8 MB");
       return;
     }
 
