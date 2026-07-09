@@ -59,8 +59,12 @@ function Settings() {
           await user.delete();
           toast.success("Account deleted");
           navigate("/");
-        } catch {
-          toast.error("Failed to delete account");
+        } catch (error) {
+          toast.error(
+            error?.errors?.[0]?.longMessage ||
+              error?.errors?.[0]?.message ||
+              "Failed to delete account. Enable self-service deletion in Clerk."
+          );
         }
       },
     });

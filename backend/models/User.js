@@ -1,35 +1,26 @@
 const mongoose = require("mongoose");
 
+// A mirror of the Clerk user, kept in sync via Clerk webhooks.
+// Clerk remains the source of truth for authentication.
 const userSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-    },
-
-    email: {
+    clerkId: {
       type: String,
       required: true,
       unique: true,
+      index: true,
     },
-
-    password: {
-      type: String,
-      required: true,
-    },
-    avatar: {
+    email: {
       type: String,
       default: "",
     },
-    avatarPublicId: {
+    name: {
       type: String,
       default: "",
     },
-    resetToken: {
+    imageUrl: {
       type: String,
-    },
-    resetTokenExpiry: {
-      type: Date,
+      default: "",
     },
   },
   {

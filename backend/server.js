@@ -6,6 +6,7 @@ const { clerkMiddleware } = require("@clerk/express");
 const connectDB = require("./config/db");
 
 const resumeRoutes = require("./routes/resumeRoutes");
+const webhookRoutes = require("./routes/webhookRoutes");
 
 const app = express();
 
@@ -20,6 +21,11 @@ app.use(
     credentials: true,
   })
 );  //This allows your React app (localhost:5173) to talk to your backend.
+
+// Clerk webhooks must be verified against the RAW request body,
+// so mount them (with express.raw) BEFORE express.json().
+app.use("/api/webhooks", express.raw({ type: "application/json" }), webhookRoutes);
+
 app.use(express.json());  //Express automatically converts the JSON into a JavaScript object.
 
 // Clerk — attaches auth to every request (verifies the session token)
